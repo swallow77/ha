@@ -1,0 +1,222 @@
+- alias: livingroom_mold_management_single
+  id: livingroom_mold_management_single
+  initial_state: true
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.mold_living
+      above: 75
+  condition:
+    - condition: time
+      after: '07:30:00'
+      before: '23:00:00'
+    - condition: template
+      value_template: "{{ this.attributes.last_triggered is none or (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered)) > 3600 }}"
+  action:
+    - service: script.universal_notify
+      data:
+        message: "거실 곰팡이 지수가 높습니다. 환기해주세요."
+        tv_notify: true
+        android_tv_notify: true
+
+- alias: bedroom_mold_management
+  mode: single
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.mold_room
+      above: 75
+  condition:
+    - condition: time
+      after: '07:30:00'
+      before: '23:00:00'
+    - condition: template
+      value_template: "{{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered, 0)) > 3600 }}"
+  action:
+    - service: script.universal_notify
+      data:
+        message: "침실에 곰팡이 지수가 높습니다. 환기해주세요."
+        tv_notify: true
+        android_tv_notify: true
+
+- alias: hyojin_room_mold_management
+  mode: single
+  initial_state: true
+  trigger:
+    - platform: template
+      value_template: "{{ states('sensor.mold_study') | float(0) > 75 }}"
+  condition:
+    - condition: time
+      after: '07:30:00'
+      before: '23:00:00'
+    - condition: template
+      value_template: "{{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered, 0)) > 3600 }}"
+  action:
+    - service: script.universal_notify
+      data:
+        message: "공부방에 곰팡이 지수가 높습니다. 환기해주세요."
+        tv_notify: true
+        android_tv_notify: true
+
+
+- alias: auto_humidity_monitor_looping
+  id: auto_humidity_monitor_looping
+  description: 모든 방의 습도를 감시하고 이상 발생 시 반복 알림 스크립트 실행
+  mode: parallel # 각 방의 알림 루프가 독립적으로 돌 수 있게 병렬 설정
+  trigger:
+    # 1. 공부방 (높음/낮음)
+    - platform: numeric_state
+      entity_id: sensor.0x00158d0002fb4710_humidity
+      above: 70
+      for: "00:03:00"
+      id: study_high
+    - platform: numeric_state
+      entity_id: sensor.0x00158d0002fb4710_humidity
+      below: 40
+      for: "00:03:00"
+      id: study_low
+    # 2. 침실 (높음/낮음)
+    - platform: numeric_state
+      entity_id: sensor.0x00158d0002b573e9_humidity
+      above: 70
+      for: "00:03:00"
+      id: bedroom_high
+    - platform: numeric_state
+      entity_id: sensor.0x00158d0002b573e9_humidity
+      below: 40
+      for: "00:03:00"
+      id: bedroom_low
+    # 3. 거실 (높음/낮음) - 센서 ID가 sensor.yaml/template.yaml 기반 추정
+    - platform: numeric_state
+      entity_id: sensor.co3_living_humi
+      above: 70
+      for: "00:03:00"
+      id: living_high
+    - platform: numeric_state
+      entity_id: sensor.co3_living_humi
+      below: 40
+      for: "00:03:00"
+      id: living_low
+  condition:
+    - condition: time
+      after: '07:30:00'
+      before: '23:00:00'
+  action:
+    # 트리거 ID에 따라 방 이름과 센서 ID 매핑
+    - variables:
+        room_info: >-
+          {% if 'study' in trigger.id %}
+            {'name': '공부방', 'entity': 'sensor.0x00158d0002fb4710_humidity'}
+          {% elif 'bedroom' in trigger.id %}
+            {'name': '침실', 'entity': 'sensor.0x00158d0002b573e9_humidity'}
+          {% elif 'living' in trigger.id %}
+            {'name': '거실', 'entity': 'sensor.co3_living_humi'}
+          {% endif %}
+    # 통합 반복 알림 스크립트 호출
+    - service: script.humidity_looping_alert
+      data:
+        room_name: "{{ room_info.name }}"
+        sensor_entity: "{{ room_info.entity }}"
+
+- id: 'living_room_high_temp_alert'
+  alias: 'Living Room High Temp Alert'
+  description: "거실 온도가 30도 초과 시 1시간 간격 반복 알림"
+  mode: single
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.living_1_temp
+      above: 30
+  condition:
+    - condition: time
+      after: '07:30:00'
+      before: '23:00:00'
+  action:
+    - repeat:
+        while:
+          - condition: numeric_state
+            entity_id: sensor.living_1_temp
+            above: 30
+        sequence:
+          - service: script.universal_notify
+            data:
+              message: "거실 온도가 {{ states('sensor.living_1_temp') | float | round(1) }}도 입니다. 에어컨을 켜는 것이 좋겠습니다."
+              tv_notify: true
+              android_tv_notify: true
+          - delay:
+              hours: 1
+
+
+
+- id: combined_room_humidity_control
+  alias: combined_room_humidity
+  description: 효진/우진 방의 재실 여부 및 습도에 따라 각 방 가습기 제어
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.hyojin
+        - sensor.woojin
+        - sensor.0x00158d0002fb4710_humidity
+        - sensor.0x00158d0002b573e9_humidity
+  condition:
+    - condition: template
+      value_template: "{{ states('humidifier.deerma_jsq2g_5c0e_humidifier') not in ['unknown', 'unavailable'] }}"
+    - condition: template
+      value_template: "{{ states('humidifier.deerma_jsq2g_cdef_humidifier_2') not in ['unknown', 'unavailable'] }}"
+  action:
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: sensor.hyojin
+              state: 'home'
+            - condition: numeric_state
+              entity_id: sensor.0x00158d0002b573e9_humidity
+              below: 42
+          sequence:
+            - service: humidifier.turn_on
+              target:
+                entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
+      default:
+        - service: humidifier.turn_off
+          target:
+            entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: sensor.woojin
+              state: 'home'
+            - condition: numeric_state
+              entity_id: sensor.0x00158d0002fb4710_humidity
+              below: 42
+          sequence:
+            - service: humidifier.turn_on
+              target:
+                entity_id: humidifier.deerma_jsq2g_cdef_humidifier_2
+      default:
+        - service: humidifier.turn_off
+          target:
+            entity_id: humidifier.deerma_jsq2g_cdef_humidifier_2
+
+- id: 'heater_7am_workday'
+  alias: Heater 7am Workday
+  description: '평일 오전 7시, 21도 미만일 때 히터 1시간 작동'
+  trigger:
+    - platform: time
+      at: '07:00:00'
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: 'on'
+    - condition: numeric_state
+      entity_id: sensor.living_1_temp
+      below: 22
+  action:
+    - service: climate.turn_on
+      target:
+        entity_id: climate.zhimi_za2_beb8_heater_2
+    - delay:
+        hours: 1
+    - service: climate.turn_off
+      target:
+        entity_id: climate.zhimi_za2_beb8_heater_2    

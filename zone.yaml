@@ -1,0 +1,73 @@
+- zone 0:
+  name: Home
+  latitude: 37.534750
+  longitude: 126.957171
+  radius: 400
+  icon: mdi:home-outline
+
+- zone 1:
+  name: 엄마집
+  latitude: 37.5349013
+  longitude: 126.9570255
+  radius: 60
+  icon: mdi:house
+
+- zone 2:
+  name: 유희 집
+  latitude: 37.533195
+  longitude: 126.992559
+  radius: 60
+  icon: mdi:office-building
+  
+#- zone 3:
+#  name: 학원
+#  latitude: 37.5416523
+#  longitude: 126.9627665
+#  radius: 80
+#  icon: mdi:book-open-page-variant
+  
+- zone 4:
+  name: JR PUB
+  latitude: 37.534067
+  longitude: 126.993731
+  radius: 50
+  icon: mdi:beer
+  
+- zone 5:
+  name: 마포
+  latitude: 37.540620
+  longitude: 126.953216
+  radius: 60
+  icon: mdi:house
+ 
+- zone 7:
+  name: 백화점
+  latitude: 37.556160
+  longitude: 126.935798
+  radius: 100
+  icon: mdi:office-building
+- zone 8:
+  name: 성심
+  latitude: 37.534601
+  longitude: 126.954367
+  radius: 150
+  icon: mdi:school
+  
+- zone 8:
+  name: 철물점
+  latitude: 37.530451
+  longitude: 126.997877
+  radius: 60
+  icon: mdi:school
+  
+- zone 9:
+  name: 수원
+  latitude: 37.217194
+  longitude: 126.95792
+  radius: 60
+  icon: mdi:school  
+#zone.test:
+#  beacon:
+#    uuid: fda50693-a4e2-4fb1-afcf-c6eb07647825
+#    major: 5
+#    minor: 6

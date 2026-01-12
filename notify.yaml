@@ -1,0 +1,47 @@
+- platform: telegram
+  name: telegram
+  chat_id: 626034401
+# - platform: pushbullet
+  # api_key: o.kcihsbxKG8H3jTHy9XdU9MBFYunF6A34
+  
+#- platform: html5
+#  name: html5_noti
+#  vapid_pub_key: BM4awTDjzD59REsR4PXhL_it_l2ZJb4zkXWl18Y1ihTyjIsrley5OHzA_5OOF8JNrtXQYcNVqfRcwYLiG-vN-ow
+#  vapid_prv_key: fT653bFaDgox4MiBbI_BgfSsQMsossYdjAgPGBW4AkM
+#  vapid_email: sdh7707@gmail.com
+
+- platform: group
+  name: noti_house
+  services:
+    # - service: html5_noti_computer
+    # - service: living_room_tv1
+    - service: lg_webos_smart_tv
+    - service: hyo_tv
+- platform: group
+  name: noti_all
+  services:
+    # - service: html5_noti
+    # - service: html5_noti_computer
+    # - service: living_room_tv1
+    - service: mobile_app_sm_s936n
+    - service: lg_webos_smart_tv
+    - service: hyo_tv
+- platform: group
+  name: noti_name
+  services:
+    - service: mobile_app_sm_s936n
+    # - service: html5_noti
+- platform: group
+  name: noti_all_1
+  services:
+    # - service: html5_noti
+    # - service: html5_noti_computer
+    # - service: living_room_tv1
+    - service: lg_webos_smart_tv    
+    - service: hyo_tv
+- name: ga_broadcast
+  platform: rest
+  resource: http://containerip:5000/broadcast_message
+- name: ga_command
+  platform: rest
+  resource: http://containerip:5000/command

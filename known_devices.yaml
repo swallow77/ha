@@ -1,0 +1,33 @@
+fsrkb_bt_001:
+  name: FSRKB_BT-001
+  mac: BLE_C4:AF:9F:57:C7:1F
+  icon: mdi:heart-pulse
+  picture:
+  track: true
+
+# amazfit_gts4_mini:
+  # name: Amazfit GTS4 mini
+  # mac: BLE_CF:EF:A2:17:4A:C8
+  # icon:
+  # picture:
+  # track: true
+# s23_ble:
+#   name: s23_ble
+#   mac: 6C:AC:C2:3A:F0:AE
+#   icon:
+#   picture:
+#   track: true
+# co2_esp:
+  # name: co2_esp
+  # mac: 3c:61:05:13:07:48
+  # icon:
+  # picture:
+  # track: true
+# woojin_iphone:
+  # name: woojin_iphon
+  # mac: 38:65:B2:37:D0:1F
+  # track: true
+# hyojin_iphone:
+  # name: hyojin_iphone
+  # mac: 14:F2:87:8A:3F:DD
+  # track: true

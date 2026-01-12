@@ -1,0 +1,14 @@
+slider1:
+  name: people
+  initial: 0
+  min: 0
+  max: 2
+  step: 1 
+  
+trace:
+  name: 택배
+  initial: 0
+  min: 0
+  max: 10
+  step: 1
+  mode: box

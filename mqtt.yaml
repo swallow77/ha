@@ -1,0 +1,19 @@
+sensor:
+  - state_topic: "home/sensors/dust/Lux"
+    name: "Dust Lux"
+    unit_of_measurement: "lx"        
+  - state_topic: "home/sensors/dust/Dust"
+    name: "dust"
+    unit_of_measurement: "㎍/m³"
+  - state_topic: "health/hoon_asleep"
+    name: "asleep"
+  - state_topic: "health/hoon_spo2"
+    name: "spo2"
+  - state_topic: "frigate/mini/car"
+    name: "car_de"
+  - state_topic: "kbo/lg_sensor/state"
+    name: "KBO LG Twins Status MQTT"
+    icon: mdi:baseball-bat
+  - name: "KBO LG Game Start Time"
+    state_topic: "kbo/lg_sensor/starttime"
+    icon: mdi:clock-start

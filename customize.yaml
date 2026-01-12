@@ -1,0 +1,246 @@
+vacuum.l10s_pro_ultra_heat:
+  templates:
+    # icon_color: >-
+      # if (attributes.status == 'docked') return 'rgb(255, 255, 255)';
+      # if (attributes.status == 'cleaning') return 'rgb(253, 216, 53)'; 
+      # if (state == 'error') return 'rgb(255, 0, 0)'; 
+      # return 'rgb(255, 255, 255)'
+    icon_color: if (state == 'idle') return '#FFFFFF'; 
+                else if (state == 'docked') return '#FFFFFF'; 
+                else if (state == 'cleaning') return 'rgb(253, 216, 53)'; 
+                else if (state == 'error') return '#FF0000';
+                else if (state == 'Drying') return '#5882FA'
+                else return '#000000';   
+
+automation.daemunsajin:
+  icon: mdi:cctv
+automation.saramalrim3:
+  icon: mdi:motion-sensor
+automation.auto_light_combined:
+  icon: mdi:lightbulb-auto-outline
+input_number.trace:
+  icon: mdi:truck-delivery-outline
+  persistent: true                
+switch.livingroom:
+  friendly_name: 거실전등
+  icon: mdi:ceiling-light
+sensor.xiaomi_Purifier_mode:
+  friendly_name: 현재 모드
+  templates: 
+    icon_color: if (state == 'Auto') return 'rgb(253, 216, 53)';
+                else if (state == 'Favorite') return 'rgb(255, 0, 0)';
+                else if (state == 'Silent') return 'rgb(250, 236, 197)';
+                else return '#000000';
+fan.zhimi_m1_3538_air_purifier:
+  templates: 
+    icon_color: if (attributes.preset_mode == 'Auto') return 'rgb(253, 216, 53)';
+                else if (attributes.preset_mode == 'Favorite') return 'rgb(255, 0, 0)';
+                else if (attributes.preset_mode == 'Silent') return 'rgb(250, 236, 197)';
+                else return '#000000';     
+cover.am43_1:
+  templates: 
+    icon_color: if (state == 'open') return 'rgb(253, 216, 53)';
+                else return '#ffffff'; 
+binary_sensor.hwajangsilmun_contact:
+  friendly_name: 화장실
+  templates: 
+    icon_color: if (state == 'on') return 'rgb(253, 216, 53)';
+
+switch.tv:
+  icon: mdi:television
+  friendly_name: TV
+
+switch.onkyo:
+  friendly_name: KODI
+  icon: mdi:kodi
+switch.onkyo_usb:
+  friendly_name: TV 조명
+binary_sensor.geosilmun_contact:
+  friendly_name: 현관문
+  icon: mdi:door
+sensor.dust_lux_2:
+  friendly_name: 침실 조도
+  icon: mdi:hotel
+light.gateway_light_34ce00812c77:
+  friendly_name: 게이트웨이
+script.message:
+  friendly_name: 메세지
+  icon: mdi:message-bulleted
+sensor.naebangondo_temperature:
+  value_template: '{{ value | round(0) }}' 
+sensor.ex_hum_inside_temperature:
+  value_template: '{{ value | round(0) }}' 
+sensor.hwajangsilondo_temperature:
+  value_template: '{{ value | round(0) }}'   
+sensor.naebangondo_humidity:
+  value_template: '{{ value | round(0) }}'
+sensor.ex_hum_relative_humidity:
+  value_template: '{{ value | round(0) }}' 
+sensor.hwajangsilondo_humidity:
+  value_template: '{{ value | round(0) }}'    
+sensor.weather_rain_percent:
+  friendly_name: 강수확률
+  icon: mdi:umbrella-outline
+sensor.bme280_pressure:
+  value_template: '{{ value | round(0) }}'
+sensor.bme680_iaq1:
+  value_template: '{{ value | round(0) }}'
+# script.game_mode:
+  # friendly_name: 엑스박스
+# sensor.home_work:
+  # friendly_name: 동훈
+  # icon: mdi:account
+# script.work_traffic:
+  # friendly_name: 근무지 시간
+sensor.calendar_contacts:
+  friendly_name: 생일
+  icon: mdi:cake-variant
+sensor.calendar_gamil:
+  friendly_name: 이벤트
+  icon: mdi:calendar-clock
+switch.my_room:
+  friendly_name: 내방 전등
+  icon: mdi:light-switch
+switch.room2_light:
+  friendly_name: 화장실 전등
+  icon: mdi:toilet
+
+sensor.illumination_34ce00812c77:
+  friendly_name: 게이트웨이 조도
+
+switch.computer:
+  friendly_name: 컴퓨터
+  icon: mdi:desktop-classic
+switch.3d_peurinteo_usb:
+  friendly_name: 3d USB
+  icon: mdi:usb
+switch.3d_peurinteo:
+  friendly_name: 3d
+switch.lg_tv_power:
+  icon: mdi:television
+device_tracker.coehwaja:
+  entity_picture: /local/img/choi.jpg
+sensor.hyo_pre:
+  entity_picture: /local/img/hyo.jpg
+sensor.woo_pre:
+  entity_picture: /local/img/woo.jpg
+device_tracker.sinyuhyi:
+  entity_picture: /local/img/hee.jpg
+device_tracker.sinrang:
+  entity_picture: /local/img/chul.jpg
+device_tracker.donghoon_shin:
+  entity_picture: /local/img/hoon.jpg
+automation.tel_mom:
+  entity_picture: /local/img/choi.jpg
+  friendly_name: 엄마 알림
+automation.tel_hyo:
+  entity_picture: /local/img/hyo.jpg
+  friendly_name: 효진 알림
+automation.tel_woo:
+  friendly_name: 우진 알림
+  entity_picture: /local/img/woo.jpg
+automation.tel_lee:
+  friendly_name: 아부지 알림
+  entity_picture: /local/img/chul.jpg
+# sensor.sun_rise:
+  # friendly_name: 일출
+  # icon: mdi:weather-sunset-up
+# sensor.sun_set:
+  # friendly_name: 일몰
+  # icon: mdi:weather-sunset-down
+# sensor.dark_sky_apparent_temperature:
+  # friendly_name: 체감온도
+sensor.hyojinbangondo_temperature:
+  friendly_name: 효진방 온도
+  icon: mdi:thermometer
+sensor.hyojinbangondo_humidity:
+  icon: mdi:water-percent
+  friendly_name: 효진방 습도
+sensor.hyojinbangondo_pressure:
+  friendly_name: 효진방 기압
+  value_template: '{{ value | round(2) }}'
+  icon: mdi:gauge
+# sensor.sonar_temp:
+  # friendly_name: tv 온도
+  # value_template: '{{ value | round(1) }}'
+# sensor.sonar_human:
+  # friendly_name: tv 습도
+  # value_template: '{{ value | round(1) }}'
+# sensor.sonar:
+  # friendly_name: 거리
+  # value_template: '{{ value | round(1) }}'
+# sensor.body_temperature_degf_2:
+  # friendly_name: 거리
+  # value_template: '{{ value | round(2) }}' 
+binary_sensor.switch_158d00016c4618:
+  friendly_name: 초인종 스위치
+# sensor.humidity_158d0002fb4710:
+  # icon: mdi:water-percent
+# sensor.ondogye_temperature:
+  # icon: mdi:thermometer
+sensor.jubangondo_humidity:
+  icon: mdi:water-percent
+# sensor.humidity_158d0002b573e9:
+  # icon: mdi:water-percent
+# sensor.ondogye_humidity:
+  # icon: mdi:water-percent
+
+sensor.living_1_temp:
+  icon: mdi:thermometer
+sensor.living_1_humi:
+  icon: mdi:water-percent
+sensor.jubangondo_temperature:
+  icon: mdi:thermometer
+# switch.82746778ecfabc22a22d:
+  # icon: mdi:fan
+# sensor.jubangondo_humdiity:
+  # icon: mdi:water-percent
+# device_tracker.toilet:
+  # device_class: connectivity
+# switch.dtt:
+  # icon: mdi:speaker
+switch.cleaner_switch:
+  friendly_name: 청소기 자동
+  icon: mdi:robot-vacuum
+
+binary_sensor.co2_senseo_2:
+  hidden: true
+
+switch.setaggi:
+  templates:
+    icon_color: if (state == 'off') return '##FFFFFF'; 
+                if (entities['switch.setaggi'].power < "1") return '#FF0000'; 
+                else if (state == 'on') return 'rgb(253, 216, 53)'; 
+                else return '#000000';
+climate.zhimi_heater_za2_04_cf_8c_2c_be_b8:
+  templates:
+    icon_color: if (state == 'off') return '#FFFFFF'; 
+                else if (state == 'heat') return '#FDD835';
+                else return '#000000';
+binary_sensor.ceongsogi_contact:
+  templates:
+    icon_color: if (state == 'off') return 'rgb(253, 216, 53)';
+                else if (state == 'on') return '#FFFFFF';
+                else return '#FFFFFF';                
+
+switch.peulseu:
+  templates:
+    icon_color: if (state == 'off') return 'rgb(253, 216, 53)';
+                else if (state == 'on') return '#FFFFFF';
+                else return '#FFFFFF';   
+
+fan.dmaker_p220_5b40_fan_2:
+  templates:
+    icon_color: if (state == 'off') return '#FFFFFF'; 
+                else if (state == 'on') return 'rgb(253, 216, 53)';
+                else return '#000000';
+                
+sensor.energy_monthly:
+  device_class: energy 
+  state_class: total_increasing
+  unit_of_measurement: kWh
+  
+sensor.energy_day:
+   device_class: energy
+   state_class: total_increasing
+   unit_of_measurement: kWh

@@ -1,0 +1,61 @@
+One UI:
+  ### Main Interface Colors ###
+  primary-color: "#82CFF2"
+  light-primary-color: "#499ebd"
+  primary-background-color: "#F6F7F9"
+  secondary-background-color: var(--primary-background-color)
+  divider-color: "#e6e6e6"
+  border-color: '#e6e6e6'
+  icon-color: "#52b0d4"
+  ### Text ###
+  primary-text-color: "#252525"
+  secondary-text-color: "#979797"
+  text-primary-color: "#3a3a3a"
+  disabled-text-color: "#ababab "
+  ### Sidebar Menu ###
+  sidebar-selected-background-color: var(--primary-background-color)
+  sidebar-selected-icon-color: var(--icon-color)
+  sidebar-selected-text-color: var(--sidebar-selected-icon-color)
+  ### States and Badges ###
+  state-icon-active-color: "#ffe07e"
+  state-icon-unavailable-color: var(--disabled-text-color)
+  # Icons
+  paper-item-icon-color: var(--icon-color)                                       # Off
+  paper-item-icon-active-color: 'var(--state-icon-active-color)'                 # On
+  ### Sliders ###
+  paper-slider-knob-color: var(--paper-item-icon-color)
+  paper-slider-knob-start-color: var(--paper-slider-knob-color)
+  paper-slider-pin-color: var(--paper-slider-knob-color)
+  paper-slider-active-color: var(--disabled-text-color)
+  paper-slider-secondary-color: var(--light-primary-color)
+  ### Labels ###
+  label-badge-background-color: var(--primary-color)
+  label-badge-text-color: "#395274"
+  #label-badge-red: "#FF8888"
+  ### Cards ###
+  paper-card-background-color: "#ffffff"
+  paper-listbox-background-color: var(--primary-background-color)
+  ### Toggles ###
+  paper-toggle-button-checked-button-color: var(--paper-card-background-color)
+  paper-toggle-button-checked-bar-color: var(--icon-color)
+  paper-toggle-button-unchecked-button-color: var(--paper-card-background-color)
+  paper-toggle-button-unchecked-bar-color: "#bbbbbb"
+  ### Table row ###
+  table-row-background-color: var(--primary-background-color)
+  table-row-alternative-background-color: var(--secondary-background-color)
+
+  # Shadows
+  shadow-elevation-2dp_-_box-shadow: '0px 0px 0px 0px rgba(0,0,0,0)'
+  shadow-elevation-4dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-6dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-8dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-10dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-12dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-14dp_-_box-shadow: 'var(--shadow-elevation-2dp_-_box-shadow)'
+  shadow-elevation-16dp_-_box-shadow: '0px 0px 0px 0px rgba(0,0,0,0)'
+
+  ha-card-border-radius: 25px
+  ha-card-box-shadow: '1px 1px 0 0 #efefef, -1px -1px 0 0 #efefef'
+  paper-font-headline_-_font-size: 18px
+  paper-font-headline_-_line-height: 26px
+  mdc-theme-primary: '#15b76c'  

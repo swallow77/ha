@@ -1,0 +1,173 @@
+- alias: Turn on Morning Boolean
+  description: 아침 input_boolean 켜기
+  id: turn_on_morning_boolean_combined
+  trigger:
+    - platform: time
+      at: "06:30:00"
+      id: workday_scheduled
+    - platform: time
+      at: "08:00:00"
+      id: holiday_scheduled
+    - platform: homeassistant
+      event: start
+      id: startup_check
+  action:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id: workday_scheduled
+            - condition: state
+              entity_id: binary_sensor.workday_sensor
+              state: 'on'
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.morrning
+        - conditions:
+            - condition: trigger
+              id: holiday_scheduled
+            - condition: state
+              entity_id: binary_sensor.workday_sensor
+              state: 'off'
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.morrning
+        - conditions:
+            - condition: trigger
+              id: startup_check
+            - condition: state
+              entity_id: input_boolean.morrning
+              state: 'off'
+            - condition: time
+              before: "09:00:00"
+          sequence:
+            - choose:
+                - conditions:
+                    - condition: state
+                      entity_id: binary_sensor.workday_sensor
+                      state: 'on'
+                    - condition: time
+                      after: "06:30:00"
+                  sequence:
+                    - service: input_boolean.turn_on
+                      target:
+                        entity_id: input_boolean.morrning
+                - conditions:
+                    - condition: state
+                      entity_id: binary_sensor.workday_sensor
+                      state: 'off'
+                    - condition: time
+                      after: "08:00:00"
+                  sequence:
+                    - service: input_boolean.turn_on
+                      target:
+                        entity_id: input_boolean.morrning
+  mode: single
+
+- alias: turn on weather tts
+  id: turn_on_weather_tts
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0x00158d0000d4b7aa_occupancy
+    to: 'on'
+  condition:
+    condition: state
+    entity_id: input_boolean.morrning
+    state: 'on'
+  action:
+    - service: cover.open_cover
+      entity_id: cover.am43_1    
+    - service: switch.turn_on
+      entity_id: 
+        - switch.0x00124b0024c0591e
+        - switch.spot_led_power
+    - service: automation.turn_off
+      entity_id: automation.pyeongil_acim_alram
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.morrning
+    - service: script.turn_on
+      data_template:
+        entity_id: >-
+          {% set val = states('sensor.gangsuhwagryul') %}
+          {% if val is not string or val == '' or (val|float(0) == 0 and val != '0') %}
+            script.morrning_tts
+          {% elif val|float(0) > 59 %}
+            script.rain_morrning_tts
+          {% else %}
+            script.morrning_tts
+          {% endif %}
+
+- alias: "평일 아침 알람"
+  id: 평일_아침_알람
+  initial_state: true
+  trigger:
+    - platform: time
+      at: "08:30:00"
+      id: wake_up_time
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: 'on'
+    # - condition: state
+    #   entity_id: input_boolean.morrning
+    #   state: 'off'
+  action:
+    - service: media_player.volume_set
+      target:
+        entity_id: media_player.maegseu_2
+      data:
+        volume_level: 0.9
+    - service: music_assistant.play_media
+      target:
+        entity_id: media_player.maegseu_2
+      data:
+        media_id: 500 Random tracks (from library)
+        media_type: playlist
+
+- alias: input_boolean.morrning off # 평일 9시에는 무조건 아침 노티
+  id: input_boolean.morrning_off
+  trigger:
+    - platform: time
+      at: "09:05:00" 
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: 'on' # work 센서가 on일 때 (근무일)
+    - condition: state
+      entity_id: input_boolean.morrning
+      state: 'on' # 추가된 조건: 아침 상태가 on일 때
+  action:
+    - service: cover.open_cover
+      entity_id: cover.am43_1    
+    - service: switch.turn_on
+      entity_id: switch.0x00124b0024c0591e
+    - service: script.turn_on
+      data_template:
+        entity_id: "{% if (states('sensor.gangsuhwagryul')) | float(0) > 59 %}script.rain_morrning_tts
+                    {% else %}script.morrning_tts{% endif %}"
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.morrning                
+  
+  
+- alias: 8 briefing
+  id: 8_briefing
+  initial_state: true
+  trigger:
+    - platform: time
+      at: '07:30:00'
+  condition:
+    - condition: template
+      value_template: >-
+        {{ states.sensor.misemeonjideunggeub.state in ['나쁨', '매우 나쁨'] or 
+           states.sensor.ojondeunggeub.state in ['나쁨', '매우 나쁨'] }}
+  action:
+    - service: script.turn_on
+      data_template:
+        entity_id: >-
+          {% if states.sensor.misemeonjideunggeub.state in ['나쁨', '매우 나쁨'] %}
+            script.8briefing
+          {% elif states.sensor.ojondeunggeub.state in ['나쁨', '매우 나쁨'] %}
+            script.co3
+          {% endif %}

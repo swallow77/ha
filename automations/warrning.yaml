@@ -1,0 +1,444 @@
+- alias: door_bell
+  id: door_bell
+  initial_state: true
+  trigger:
+    platform: event
+    event_type: xiaomi_aqara.click
+    event_data:
+      entity_id: binary_sensor.switch_158d00016c4618
+      click_type: single
+  action:
+    - service: script.universal_notify
+      data:
+        message: "손님이 오셨습니다"
+        tts_target: media_player.nesthub4076
+        push_target: noti_all
+        push_title: '*방문객*'
+    - service: media_player.volume_set
+      entity_id: media_player.nesthub4076
+      data:
+        volume_level: 0.6
+    # - service: camera.play_stream
+    #   data:
+    #     entity_id: camera.out_dome
+    #     media_player: media_player.maegseu
+    - service: camera.snapshot
+      data:
+        entity_id: camera.out_dome
+        filename: /config/www/snap/last.jpg
+    - service: camera.snapshot
+      data:
+        entity_id: camera.r4_f
+        filename: /config/www/snap/last1.jpg
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: /config/www/snap/last2.jpg
+    - service: telegram_bot.send_photo
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        file: /config/www/snap/last2.jpg
+    - service: telegram_bot.send_photo
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        file: /config/www/snap/last1.jpg
+    - service: telegram_bot.send_photo
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        file: /config/www/snap/last.jpg
+    - service: camera.record
+      target:
+        entity_id: camera.outdom_cast
+      data:
+        filename: /config/www/snap/last1.mp4
+        duration: 30
+        lookback: 15
+    - delay: 00:01:00
+    - service: telegram_bot.send_video
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        file: /config/www/snap/last1.mp4
+
+- alias: fire alram
+  id: fire_alram
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: 
+        - sensor.living_1_temp
+        - sensor.0x00158d0002b573e9_temperature
+        - sensor.0x00158d0000f19a70_temperature    
+        - sensor.0x00158d0000fa2832_temperature
+        - sensor.0x00158d0000f19a70_temperature          
+      above: 40
+    - platform: state
+      entity_id: binary_sensor.0x00158d00040b037d_smoke
+      to: "on"      
+  action:
+    - service: media_player.volume_set
+      entity_id: media_player.jeonce
+      data:
+        volume_level: 1
+    - service: switch.turn_on
+      entity_id: switch.room3_2
+    - service: cover.open_cover
+      entity_id: cover.am43_1        
+    - service: tts.microsoft_say
+      entity_id: media_player.jeonce
+      data:
+        message: "화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생,화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생"
+    - service: notify.noti_all
+      data:
+        message: "화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생, 화재발생 "
+          
+    
+- alias: fire warring
+  id: fire_warring
+  initial_state: true
+  trigger:
+    platform: numeric_state
+    entity_id: sensor.0x00158d00040b037d_smoke_density
+    above: 2
+  action:
+    - service: script.universal_notify
+      data:
+        message: "연기가 감지되었습니다. 점검해주세요."
+        push_target: noti_all
+    - service: cover.open_cover
+      entity_id: cover.am43_1             
+    - service: tts.microsoft_say
+      entity_id: media_player.jeonce
+      data_template:
+        message: "{{ message }}"
+
+- alias: fire warring_2
+  id: fire_warring_2
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c138a1dae1f6c7_smoke
+    to: 'on'
+  action:
+    - service: script.universal_notify
+      data:
+        message: "연기가 감지되었습니다. 점검해주세요."
+        push_target: noti_all
+    - service: cover.open_cover
+      entity_id: cover.am43_1             
+    - service: tts.microsoft_say
+      entity_id: media_player.jeonce
+      data_template:
+        message: "{{ message }}"
+
+- alias: main_door_opne
+  id: main_door_opne
+  initial_state: false
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c13821150cf1b8_contact
+    to: "on"
+  action:  
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: noti_name
+        push_title: '★거실문 알림★'
+        message: "거실문 알림"
+        tv_notify: true
+        android_tv_notify: true
+
+- alias: out_door_open
+  id: out_door_open
+  initial_state: false
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0x00158d0001e4545b_contact
+    to: "on"
+  action:  
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: noti_name
+        push_title: '*현관문 알림*'
+        message: "현관문 알림"
+        tv_notify: true
+        android_tv_notify: true
+
+- alias: now_rain
+  id: now_rain
+  initial_state: true      
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+  action:
+    - choose:
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+            state: 'on'    
+        sequence:
+          - service: input_boolean.turn_on
+            entity_id: input_boolean.rain
+      - conditions:            
+          - condition: state
+            entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+            state: 'off'
+            for:
+              minutes: 30          
+        sequence: 
+          - service: input_boolean.turn_off
+            entity_id: input_boolean.rain
+            
+- alias: rain2
+  id: rain2
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_boolean.rain
+    from: 'off'
+    to: 'on'
+  action:
+    - service: script.universal_notify
+      data:
+        message: "현재 비가 내립니다 창문을 확인해주세요"
+        tv_notify: true
+        android_tv_notify: true
+# - alias: gas_alram
+#   initial_state: on
+#   trigger:
+#     platform: state
+#     entity_id: binary_sensor.ceongsogi_contact
+#     to: 'off'
+#     for:
+#       minutes: 30
+#   action:
+#     - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "    
+#     - service: tts.microsoft_say
+#       entity_id: media_player.jeonce
+#       data:
+#         message: "가스 사용 30분이 경과했습니다."
+#     - service: notify.noti_all
+#       data:
+#         message: "가스 사용 30분이 경과했습니다."
+
+# - alias: gas_alet
+#   initial_state: true
+#   trigger:
+#     - platform: numeric_state
+#       entity_id: sensor.gas_sensor
+#       above: 1
+#   action:
+#     - service: tts.microsoft_say
+#       entity_id: media_player.jeonce
+#       data_template:
+#         message: "창문에서 가스가 검출됬습니다"
+#     - service: notify.lg_webos_smart_tv
+#       data:
+#         message: "창문에서 가스가 검출됬습니다" 
+                      
+
+- alias: 문열림 
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c13821150cf1b8_contact
+    to: 'on'
+    for:
+      seconds: 60
+  condition:
+    condition: state
+    entity_id: group.wifi_check
+    state: 'home'
+  action:
+    - service: script.universal_notify
+      data:
+        message: "현관문이 열렸습니다"
+        push_target: noti_all
+        push_title: '*문열림*'     
+        tv_notify: true
+        android_tv_notify: true
+
+- alias: 문열림2
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c13821150cf1b8_contact
+    to: 'on'
+    for:
+      seconds: 60
+  condition:
+    condition: state
+    entity_id: group.wifi_check
+    state: 'not_home'
+  action:
+    - service: script.universal_notify
+      data:
+        message: "현관문이 열렸습니다. 30초후 경비모드로 전환합니다"
+        push_target: noti_all
+        push_title: '*문열림*'
+    - delay: 00:01:00        
+    - action: alarm_control_panel.alarm_arm_away
+      target:
+        entity_id: alarm_control_panel.lumi_gateway_v3_alarm
+    - service: notify.mobile_app_sm_s936n
+      data:
+        title: '*문열림*'
+        message: "현관문이 열렸습니다. 경비모드로 전환합니다"      
+        data:
+          actions:
+            - action: trigger_1
+              title: 경비모드
+            - action: trigger_2
+              title: 경비모드 해제
+     
+- alias: 경보
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c138cb27622094_occupancy
+    to: 'on'
+  condition:
+    condition: and
+    conditions:
+    - condition: state
+      entity_id: alarm_control_panel.lumi_gateway_v3_alarm     
+      state: 'armed_away'    
+  action:
+    - service: script.turn_on
+      entity_id: script.play_sel_sound_loop
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: noti_all
+        push_title: '*침입자 발생*'
+        message: '침입자가 발생했습니다'
+            
+- alias: 누수
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0xa4c138ebb3082c3e_water_leak
+    to: 'on'
+  action:
+    - service: light.turn_on
+      entity_id:
+        - switch.0x00124b00257c2696
+        - switch.my_room
+        - switch.0x00124b0024c0591e
+    - service: notify.noti_all
+      data: 
+        title: '*누수 발생*'
+        message: '누수가 발생했습니다'
+        tv_notify: true
+        android_tv_notify: true        
+    - service: media_player.volume_set
+      entity_id:
+        - media_player.jeonce
+        - media_player.gajogsil
+        - media_player.geosil
+        - media_player.hwajangsil
+        - media_player.maegseu
+        - media_player.nesthub4076
+      data:
+        volume_level: 1
+    - service: tts.microsoft_say
+      entity_id: media_player.jeonce
+      data:
+        message: "누수발생 누수발생 누수발생 누수발생 누수가 발생됬습니다."
+    - service: media_player.volume_set
+      entity_id:
+        - media_player.jeonce
+        - media_player.gajogsil
+        - media_player.geosil
+        - media_player.hwajangsil
+        - media_player.maegseu
+        - media_player.nesthub4076
+      data:
+        volume_level: 0.5        
+    - delay: 00:01:00
+    - service: script.turn_on
+      entity_id: script.play_sel_sound_loop
+      
+- alias: 담배
+  initial_state: true
+  id: 담배
+  trigger:
+    platform: numeric_state
+    entity_id: sensor.zone_0_person_count
+    above: 0
+    for:
+      seconds: 20
+  action:
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: /config/www/snap/taba.jpg
+    - service: script.universal_notify
+      data:
+        message: "담배피는 사람이 있습니다."
+        push_target: noti_all
+        push_title: '*담배피는 사람이 있습니다.*'
+    - service: telegram_bot.send_photo
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        file: /config/www/snap/taba.jpg
+    - if:
+        - condition: state
+          entity_id: media_player.smarttv_4k
+          state: 'on'
+          match: any
+      then:
+        - service: notify.hyo_tv
+          data:
+            data:
+              image: /config/www/snap/taba.jpg
+            message: 담배피는 사람이 있음      
+
+- alias: ESPresense 센서 이상 알림 (이름 포함)
+  id: ESPresense_센서_이상_알림_이름_포함
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.espresense_bedroom_pre_connectivity
+        - binary_sensor.espresense_study_pre_connectivity
+        # - binary_sensor.espresense_living_pre_connectivity
+      to: "off"
+      for: 
+        minutes: 10
+  action:
+    - service: notify.noti_all
+      data:
+        message: >-
+          {{ trigger.to_state.attributes.friendly_name }} 센서가 이상이 생겼습니다.
+        data: 
+          priority: high          
+# - alias: gas_alram
+  # initial_state: on
+  # trigger:
+    # platform: state
+    # entity_id: binary_sensor.ceongsogi_contact
+    # to: 'off'
+- id: frigate_notification_person
+  alias: Frigate Notification Person
+  description: out_dome 카메라에서 사람 감지시 알림
+  trigger:
+    - platform: mqtt
+      topic: frigate/events
+  condition:
+    - condition: template
+      value_template: "{{ trigger.payload_json['type'] == 'new' }}"
+    - condition: template
+      value_template: "{{ trigger.payload_json['after']['camera'] == 'out_dome' }}"
+    - condition: template
+      value_template: "{{ trigger.payload_json['after']['label'] == 'person' }}"
+    - condition: template
+      value_template: "{{ 'zone_1' in trigger.payload_json['after']['zones'] }}"
+  action:
+    - service: notify.mobile_app_sm_s936n
+      data:
+        message: "{{ trigger.payload_json['after']['camera'] }}에서 사람이 감지되었습니다."
+        data:
+          image: "https://sdh7707.net/api/frigate/notifications/{{ trigger.payload_json['after']['id'] }}/thumbnail.jpg"
+          clickAction: "https://sdh7707.net/api/frigate/notifications/{{ trigger.payload_json['after']['id'] }}/clip.mp4"
+          # 또는 Lovelace 뷰로 이동
+          # clickAction: /lovelace-frigate/d7b9e828-98e945d8/live/out_dome    

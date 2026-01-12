@@ -1,0 +1,138 @@
+mqtt:
+  host: 192.168.0.40
+  user: admin
+  password: swallow77!
+
+detectors:
+#  coral:
+#    type: edgetpu
+#    device: usb
+  coral1:
+    type: edgetpu
+    device: pci:0
+  coral2:
+    type: edgetpu
+    device: pci:1
+review:
+  detections:
+    labels:
+      - person
+detect:
+  annotation_offset: 2
+# ffmpeg:
+#  hwaccel_args: preset-vaapi
+objects:
+  track:
+    - person
+    - bicycle
+    - car
+    - motorcycle
+record:
+  enabled: true
+  events:
+    retain:
+      default: 7
+snapshots:
+  enabled: true
+  retain:
+    default: 7
+
+cameras:
+  out_dome:
+    ffmpeg:
+      inputs:
+        - path: rtsp://admin:swallow77!@192.168.0.20
+          roles:
+            - detect
+          input_args: preset-rtsp-generic
+    live:
+      stream_name: door
+    detect:
+      enabled: true
+#      width: 2560
+#      height: 1440
+      width: 1920
+      height: 1080
+      fps: 20
+
+    zones:
+      zone_1:
+        coordinates: 0.407,1,0.587,1,0.524,0.391,0.284,0.406,0.292,0.473,0.393,0.939
+        objects: person
+        min_score: 0.5
+        inertia: 1          # 값을 조정하여 객체가 영역 안에 머물러야 하는 시간을 제어할 수 있습니다
+        loitering_time: 0
+    motion:
+      improve_contrast: true
+      threshold: 3          # 값을 조정하여 움직임 감지 민감도를 제어할 수 있습니다. 값이 높을수록 더 큰 움직임이 감지됩니다. 
+      contour_area: 8       # 값을 조정하여 감지할 움직임의 크기를 제어할 수 있습니다. 값이 높을수록 더 큰 움직임이 감지됩니다.
+      delta_alpha: 0.2      # 추가
+      frame_alpha: 0.2
+
+    review:
+      alerts: {}
+    objects:
+      filters:
+        person: {}
+  r4_f:
+    ffmpeg:
+      inputs:
+        - path: rtsp://swallow:swallow77!@192.168.0.139
+          roles:
+            - detect
+      input_args: preset-rtsp-generic
+    detect:
+   #   width: 1280
+   #   height: 720
+   #   fps: 20
+      enabled: true
+    snapshots:
+      enabled: true
+      timestamp: true
+
+    zones:
+      zone_3:
+        coordinates: 0,0.816,0,1,1,1,1,0.791
+        inertia: 3
+        loitering_time: 0
+        objects:
+          - person
+          - car
+    motion: {}
+  in_dome:
+    ffmpeg:
+      inputs:
+        - path: rtsp://admin:swallow77!@192.168.0.52
+          roles:
+            - detect
+      input_args: preset-rtsp-generic
+    detect:
+      enabled: true
+    #  width: 1280
+    #  height: 720
+      fps: 20
+    zones:
+      zone_0:
+        coordinates: 0.169,0.787,0.915,0.672,0.828,0.918,0.412,0.934,0.119,0.864
+# database:
+#  path: /config/frigate.db
+        inertia: 3
+        loitering_time: 0
+        objects: person
+      indome_car_zone:
+        coordinates: 0.698,0,1,0.387,1,1,0,1,0,0
+        loitering_time: 0
+        objects: car
+        inertia: 1
+    review:
+      alerts: {}
+#go2rtc:
+#  streams:
+#    door:
+#      - rtsp://admin:swallow77!@192.168.0.20
+#    webrtc:
+#      candidates:
+#        - 192.168.0.240:8555
+#        - stun:8555
+
+version: 0.14

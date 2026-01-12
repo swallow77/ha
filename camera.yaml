@@ -1,0 +1,22 @@
+# - platform: ffmpeg
+  # name: indoor
+  # input: rtsp://admin:swallow77!@192.168.0.52
+# - platform: ffmpeg
+  # name: outdoor
+  # input: rtsp://admin:swallow77!@192.168.0.18
+# - platform: ffmpeg
+  # name: r4_ffmpeg
+  # input: rtsp://swallow:swallow77!@192.168.0.251:88/videoMain
+    
+    
+# - platform: ffmpeg
+  # input: http://www.utic.go.kr/view/map/cctvStream.jsp?cctvid=L010238&cctvname=%25EC%259A%25A9%25EC%2582%25B0%25EA%25B5%25AC%25EC%25B2%25AD&kind=Seoul&cctvip=null&cctvch=51&id=308&cctvpasswd=null&cctvport=null&minX=126.9482991550369&minY=37.52301087789054&maxX=127.00733099403352&maxY=37.54833709965438
+  # name: 보건소
+# - platform: ffmpeg
+  # input: http://www.utic.go.kr/view/map/cctvStream.jsp?cctvid=L010023&cctvname=%25EC%2582%25BC%25EA%25B0%2581%25EC%25A7%2580&kind=Seoul&cctvip=null&cctvch=51&id=23&cctvpasswd=null&cctvport=null&minX=126.9482991550369&minY=37.52301087789054&maxX=127.00733099403352&maxY=37.54833709965438
+  # name: 삼각지  
+# - platform: ffmpeg
+  # input: http://www.utic.go.kr/view/map/cctvStream.jsp?cctvid=L010023&cctvname=%25EC%2582%25BC%25EA%25B0%2581%25EC%25A7%2580&kind=Seoul&cctvip=null&cctvch=51&id=23&cctvpasswd=null&cctvport=null&minX=126.9482991550369&minY=37.52301087789054&maxX=127.00733099403352&maxY=37.54833709965438
+  # name: 삼각지    
+
+

@@ -1,0 +1,54 @@
+- cal_id: m76jdhg7pso75f0ghgn840g0js@group.calendar.google.com
+  entities:
+  - device_id: shinyi_iljeong
+    ignore_availability: true
+    name: "Shin\uC758 \uC77C\uC815"
+#    track: true
+
+- cal_id: sdh7707@gmail.com
+  entities:
+  - device_id: sdh7707_gmail_com
+    ignore_availability: true
+    name: sdh7707@gmail.com
+#    track: true
+
+- cal_id: 5knhje1gg6a51eah2mvjlq3r6k@group.calendar.google.com
+  entities:
+  - device_id: eobmu
+    ignore_availability: true
+    name: "\uC5C5\uBB34"
+#    track: true
+
+- cal_id: guoom88o0obeiae9llcsdgl84o@group.calendar.google.com
+  entities:
+  - device_id: sae_kaelrindeo_gudog
+    ignore_availability: true
+    name: "\uC0C8 \uCE98\uB9B0\uB354 \uAD6C\uB3C5"
+#    track: true
+
+- cal_id: family08730240146962546703@group.calendar.google.com
+  entities:
+  - device_id: gajog
+    ignore_availability: true
+    name: "\uAC00\uC871"
+#    track: true
+
+- cal_id: ko.south_korea#holiday@group.v.calendar.google.com
+  entities:
+  - device_id: daehanmingugyi_hyuil
+    ignore_availability: true
+    name: "\uB300\uD55C\uBBFC\uAD6D\uC758 \uD734\uC77C"
+#    track: true
+
+# - cal_id: p#weather@group.v.calendar.google.com
+  # entities:
+  # - device_id: weather
+    # ignore_availability: true
+    # name: Weather
+#    track: false
+
+- cal_id: p#weather@group.v.calendar.google.com
+  entities:
+  - device_id: nalssi
+    ignore_availability: true
+    name: "\uB0A0\uC528"

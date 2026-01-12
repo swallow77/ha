@@ -1,0 +1,196 @@
+homeassistant:
+  internal_url: "http://192.168.0.240:8123"
+  external_url: "https://sdh7707.net"
+  name: Home
+  latitude: 37.534780
+  longitude: 126.957789
+  country: KR
+#  elevation: 26
+  unit_system: metric
+  currency: KRW
+  time_zone: Asia/Seoul
+  customize: !include customize.yaml
+  # auth_providers:
+   # - type: legacy_api_password
+     # api_password: !secret http_password
+   # - type: trusted_networks
+     # trusted_networks:
+       # - 192.168.0.1
+       # - 192.168.0.3
+       # - 192.168.0.0/16
+       # - 127.0.0.1
+       # - fd00::/8
+       
+     # allow_bypass_login: true    
+
+zeroconf:
+ffmpeg:
+
+# logger:
+  # default: error
+  # logs:
+    # homeassistant.components.automation: error
+      
+default_config:
+
+api:
+
+# ifttt:
+  # key: cSAgT8FEOyMFiKZk0dib2f
+http:
+  ip_ban_enabled: false
+  use_x_forwarded_for: true
+  trusted_proxies:
+    # - 127.0.0.1
+    - 192.168.0.108
+    # - 172.30.33.0/24
+  
+tts:
+  - platform: google_translate
+    language: 'ko'
+  - platform: google_cloud
+    key_file: tts-last-b5ba0f8cd04a.json
+    language: ko-KR
+    # voice: ko-KR-Chirp3-HD-Aoede
+    voice: ko-KR-Wavenet-A
+    speed: 1.0
+    pitch: 1.0
+ 
+
+  - platform: watson_tts
+    watson_apikey: 282c1d79-9176-4597-9cff-941a8d6cfd4c
+    # watson_url: https://api.kr-seo.text-to-speech.watson.cloud.ibm.com/instances/b2e66b1d-88bb-4ed0-8774-13eb7fa7f39b
+    voice: ko-KR_JinV3Voice
+    # voice: ko-KR_YunaVoice
+  - platform: edge_tts
+    language: ko-KR-SunHiNeural
+    volume: +200%
+  - platform: microsoft
+    api_key: b53e1c45ded74af68c6908d2c90d67e1
+    language: ko-kr
+    region: koreacentral
+    type: SunHiNeural   
+sun:
+
+
+# circadian_lighting:
+
+notify: !include notify.yaml
+#zone: !include zone.yaml
+group: !include groups.yaml
+automation: !include_dir_merge_list automations/
+automation ui: !include automation.yaml
+# automation manual: !include_dir_merge_list
+script: !include script.yaml
+sensor: !include sensor.yaml
+switch: !include switch.yaml
+camera: !include camera.yaml
+recorder: !include recorder.yaml
+google_assistant: !include assistant.yaml
+input_boolean: !include input_boolean.yaml
+climate: !include climates.yaml
+#input_slider: !include input_slider.yaml
+input_select: !include input_select.yaml
+input_number: !include input_number.yaml
+input_text: !include input_text.yaml
+scene: !include scenes.yaml
+person: !include person.yaml
+shell_command: !include shell.yaml
+mqtt: !include mqtt.yaml
+utility_meter: !include util.yaml
+logbook: !include logbook.yaml
+image_processing: !include image_processing.yaml
+command_line: !include command_line.yaml
+logger: !include logger.yaml
+input_datetime: !include input_datetime.yaml
+template: !include template.yaml
+binary_sensor:
+  - platform: korean_workday
+    # service_key: !secret workday_key
+#    add_holidays:
+  # - platform: sun2
+    # monitored_conditions:
+      # - elevation
+      # - max_elevation
+      # - solar_noon
+shopping_list:  
+
+# telegram_bot:
+  # - platform: polling
+    # api_key: !secret tel_api
+    # allowed_chat_ids:
+      # - 626034401
+
+     
+
+system_health:
+
+stream:
+  # ll_hls: true
+  # part_duration: 0.75
+  # segment_duration: 6   
+  
+webhook:
+
+# influxdb:
+#   host: 192.168.0.134
+#   port: 8086
+#   database: homeassistant
+#   username: admin
+#   password: swallow77!
+#   default_measurement: state
+#   exclude:
+#     entities:
+#        - entity.id1
+#        - entity.id2
+#   include:
+#     domains:
+#        - sensor
+
+#   tags_attributes:
+#     - friendly_name
+
+influxdb:
+  api_version: 2          # v2 사용 명시
+  host: 192.168.0.183    # 설치하신 InfluxDB v2 LXC의 IP 주소
+  port: 8086
+  token: oV8GzFbyVR6oK8vmkoiwGbSCQqOaM8JoDU2EAoI46Zt62l2KHNJVDAcNVIsZHYqVdMGrWh3UbA4xhisXGDbcSg==
+  organization: ae7598ed5d0bbc95 # ★★★ InfluxDB v2 UI에서 확인한 조직(Organization) ID
+  bucket: homeassistant   # ★★★ InfluxDB v2 설정 시 만든 버킷 이름
+  ssl: false
+  default_measurement: state
+  exclude:
+    entities:
+       - entity.id1
+       - entity.id2
+  include:
+    domains:
+       - sensor
+
+  tags_attributes:
+    - friendly_name
+
+frontend:
+  themes: !include_dir_merge_named themes
+  extra_module_url:
+    - /local/card-mod.js
+
+media_source:
+
+
+# clova:
+# device_tracker:
+  # - platform: bluetooth_le_tracker
+    # track_new_devices: false
+    # track_battery: true
+    # interval_seconds: 10
+# bluetooth:
+my:
+
+counter:
+  human:
+    name: "사람출입"
+    initial: 0
+    step: 1
+    icon: mdi:counter  
+    

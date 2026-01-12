@@ -1,0 +1,142 @@
+- alias: 사람알림2
+  id: '사람알림2'
+  initial_state: false
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.0x00158d000165ff42_occupancy
+      from: 'off'
+      to: 'on'
+  action:
+    - service: camera.snapshot
+      data:
+        entity_id: camera.out_dome
+        filename: /config/www/snap/last.jpg
+    - service: camera.snapshot
+      data:
+        entity_id: camera.r4_f
+        filename: /config/www/snap/last1.jpg
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: /config/www/snap/last2.jpg  
+    - service: telegram_bot.send_message
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        title: '사람 감지'
+        message: "사람이 감지되었습니다."
+        data:
+          photo:
+            - file: /config/www/snap/last2.jpg
+            - file: /config/www/snap/last1.jpg 
+            - file: /config/www/snap/last.jpg                 
+    - service: camera.record
+      target:
+        entity_id: camera.out_dome
+      data:
+        filename: /config/www/snap/last1.mp4
+        duration: 30     
+    - delay: 00:00:40        
+    - service: telegram_bot.send_message
+      data:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        title: '사람 감지'
+        message: "사람이 감지되었습니다."
+        data:
+          video:
+            - file: /config/www/snap/last1.mp4
+
+- alias: 사람알림3
+  id: '사람알림3'
+  trace:
+    stored_traces: 10
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.0x00158d000165ff42_occupancy
+      from: 'off'
+      to: 'on'
+  action:
+    - service: camera.snapshot
+      data:
+        entity_id: camera.r4_f
+        filename: '/config/www/snap/last1.jpg'
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: '/config/www/snap/last2.jpg'
+    - service: camera.snapshot
+      data:
+        entity_id: camera.out_dome
+        filename: '/config/www/snap/last.jpg'
+    - delay: 00:00:03
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.maegseu
+        media_content_type: image/jpeg
+        # media_content_id: /config/www/snap/door.jpg 
+        media_content_id: https://sdh7707.net/local/snap/door.jpg 
+    - delay: 00:01:00  
+    - action: media_player.turn_off
+      target:
+        entity_id:
+          - media_player.maegseu
+      data: {}    
+
+- alias: 대문사진
+  mode: single
+  id: '대문사진'
+  initial_state: true
+  trace:
+    stored_traces: 10
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.zone_1_person_occupancy
+      from: 'off'
+      to: 'on'
+  action:
+    - service: camera.snapshot
+      data:
+        entity_id: camera.out_dome
+        filename: /config/www/snap/door.jpg
+    - delay: 00:00:02
+    - if:
+        - condition: state
+          entity_id: media_player.smarttv_4k
+          state: 'on'
+          match: any
+      then:
+        - service: notify.hyo_tv
+          data:
+            data:
+              image: /config/www/snap/door.jpg
+            message: 대문알림
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.maegseu
+        media_content_type: image/jpeg
+        # media_content_id: /config/www/snap/door.jpg 
+        media_content_id: https://sdh7707.net/local/snap/door.jpg
+    - delay: 00:01:00  
+    - action: media_player.turn_off
+      target:
+        entity_id:
+          - media_player.maegseu
+      data: {}    
+
+ 
+                    
+- alias: Frigate 재시작 자동화
+  id: 'Frigate 재시작 자동화'
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: camera.in_dome
+      to: 'unavailable'
+      for: 
+        00:03:00
+  action: 
+    - service: hassio.addon_restart
+      data:
+        addon: ccab4aaf_frigate   

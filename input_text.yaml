@@ -1,0 +1,16 @@
+text1:
+  name: 메세지
+car_text:
+  name: 택배차
+trace_text:
+  name: 택배
+woojin_last_location:
+  name: 우진 전위치
+hyojin_last_location:
+  name: 효진 전위치  
+donghun_last_location:
+  name: 동훈 전위치
+# previous_ujin_wici:
+#   name: 우진전위치
+# previous_hyojin_wici:
+#   name: 효진전위치

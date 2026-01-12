@@ -1,0 +1,233 @@
+- alias: blind_sleep
+  id: blind_sleep
+  trigger:
+    platform: time
+    at: '22:00:00'
+  action:
+    - service: cover.set_cover_position
+      target:
+        entity_id: cover.am43_1
+      data_template:
+        position: >-
+          {% if states('sensor.living_1_temp') | float < 26 %}
+            0 
+          {% else %}
+            33
+          {% endif %}
+
+- alias: blind_tv
+  id: blind_tv
+  trigger:
+    platform: state
+    entity_id: media_player.lg_webos_smart_tv
+    to: 'off'
+  condition:
+    - condition: state
+      entity_id: sun.sun
+      state: above_horizon
+  action:
+    - service: cover.open_cover
+      # data:
+      #   position: 28
+      entity_id: cover.am43_1
+
+- alias: blind_tv_v3
+  id: blind_tv_v3
+  description: TV, 조도, 온도 연동 블라인드 제어
+  trigger:
+    - platform: state
+      entity_id: media_player.lg_webos_smart_tv
+      to: 'on'
+      id: tv_turned_on
+    - platform: numeric_state
+      entity_id: sensor.0x04cf8cdf3c78c7ce_illuminance
+      above: 250
+      id: becomes_bright
+    - platform: numeric_state
+      entity_id: sensor.0x04cf8cdf3c78c7ce_illuminance
+      below: 250
+      for:
+        minutes: 5
+      id: becomes_dark
+  condition:
+    - condition: state
+      entity_id: media_player.lg_webos_smart_tv
+      state: 'on'
+    - condition: state
+      entity_id: sun.sun
+      state: above_horizon
+  action:
+    - choose:
+        # Case 1: 어두워질 때
+        - conditions:
+            - condition: trigger
+              id: becomes_dark
+          sequence:
+            - if:
+                - condition: template
+                  value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(0) != 100 }}"
+              then:
+                - service: cover.open_cover
+                  target:
+                    entity_id: cover.am43_1
+        # Case 2: 밝아질 때
+        - conditions:
+            - condition: trigger
+              id: becomes_bright
+          sequence:
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ states('sensor.living_1_temp') | float(99) > 26 }}"
+                  sequence:
+                    - if:
+                        - condition: template
+                          value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(0) != 28 }}"
+                      then:
+                        - service: cover.set_cover_position
+                          target:
+                            entity_id: cover.am43_1
+                          data:
+                            position: 28
+              default:
+                - if:
+                    - condition: template
+                      value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(100) != 0 }}"
+                  then:
+                    - service: cover.close_cover
+                      target:
+                        entity_id: cover.am43_1
+        # Case 3: TV가 켜졌을 때
+        - conditions:
+            - condition: trigger
+              id: tv_turned_on
+          sequence:
+            - choose:
+                # Option A: 현재 밝을 때
+                - conditions:
+                    - condition: numeric_state
+                      entity_id: sensor.0x04cf8cdf3c78c7ce_illuminance
+                      above: 250
+                  sequence:
+                    - choose:
+                        - conditions:
+                            - condition: template
+                              value_template: "{{ states('sensor.living_1_temp') | float(99) > 26 }}"
+                          sequence:
+                            - if:
+                                - condition: template
+                                  value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(0) != 28 }}"
+                              then:
+                                - service: cover.set_cover_position
+                                  target:
+                                    entity_id: cover.am43_1
+                                  data:
+                                    position: 28
+                      default:
+                        - if:
+                            - condition: template
+                              value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(100) != 0 }}"
+                          then:
+                            - service: cover.close_cover
+                              target:
+                                entity_id: cover.am43_1
+              # Option B: 현재 어두울 때
+              default:
+                - if:
+                    - condition: template
+                      value_template: "{{ state_attr('cover.am43_1', 'current_position') | int(0) != 100 }}"
+                  then:
+                    - service: cover.open_cover
+                      target:
+                        entity_id: cover.am43_1
+  mode: single
+
+- id: study_curtain_morning_open_combined
+  alias: Study Curtain Morning Open Combined
+  description: 아침 조건 확인 후 공부방 커튼 열기 (통합)
+  trigger:
+    - platform: time
+      at: "07:10:00"
+      id: trigger_workday_time
+    - platform: time
+      at: "10:55:00"
+      id: trigger_holiday_time
+  condition: []
+  action:
+    - choose:
+        # 오전 10:55 트리거 & (휴일 또는 방학)
+        # - conditions:
+        #     - condition: trigger
+        #       id: trigger_holiday_time
+        #     - condition: or
+        #       conditions:
+        #         - condition: state
+        #           entity_id: binary_sensor.korean_workday
+        #           state: 'off'
+        #         - condition: state
+        #           entity_id: sensor.vacation_mode
+        #           state: 'on'
+        #   sequence:
+        #     - service: cover.open_cover
+        #       target:
+        #         entity_id: cover.study_curtain_gongbubang_keoteun
+        # 오전 7:10 트리거 & 평일 & 방학 아님
+        - conditions:
+            - condition: trigger
+              id: trigger_workday_time
+            - condition: state
+              entity_id: binary_sensor.korean_workday
+              state: 'on'
+            - condition: state
+              entity_id: sensor.vacation_mode
+              state: 'off'
+          sequence:
+            - service: cover.open_cover
+              target:
+                entity_id: cover.study_curtain_gongbubang_keoteun
+      default: [] # 위 조건에 해당하지 않으면 아무 동작 안 함
+
+# - alias: blind_tvoff
+#   id: blind_tvoff
+#   trigger:
+#     platform: state
+#     entity_id: media_player.lg_webos_smart_tv
+#     to: 'off'
+#   condition:
+#     - condition: time
+#       after: '08:00:00'
+#       before: '21:00:00'
+#     - condition: template # blind_tv 실행 후 5분 동안 실행 방지
+#       value_template: >
+#         {{ as_timestamp(now()) - as_timestamp(state_attr('automation.blind_tv', 'last_triggered')) | default(0) > 300 }}
+#   action:
+#     - service: cover.open_cover
+#       entity_id: cover.am43_1 
+
+# - alias: blind_temp
+#   id: blind_temp
+#   trigger:
+#     - platform: state
+#       entity_id:
+#         - sensor.0x04cf8cdf3c78c7ce_illuminance
+#         - sensor.dw1_realtime_temperature
+#   condition:
+#     - condition: template
+#       value_template: >
+#         {{ 
+#           states('sensor.dw1_realtime_temperature') | float > 28 and
+#           states('sensor.0x04cf8cdf3c78c7ce_illuminance') | int > 370 and
+#           is_state('media_player.lg_webos_smart_tv', 'off') and
+#           now().hour < 18 }}
+#   action:
+#     - service: cover.close_cover
+#       entity_id: cover.am43_1
+#     - service: cover.open_cover
+#       entity_id: cover.am43_1
+#       data_template:
+#         position: >
+#           {% if states('sensor.0x04cf8cdf3c78c7ce_illuminance') | int <= 369 %}
+#           100
+#           {% else %}
+#           0
+#           {% endif %}

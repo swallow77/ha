@@ -1,0 +1,354 @@
+- id: air_quality_light_control # 아주 간략한 영어 ID 추가
+  alias: 통합 공기질 조명 제어 # 사용자 요청대로 유지
+  description: 통합 공기질 센서 값에 따라 조명 색상 제어 # 간단한 한글 설명 추가
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.air_value
+        - sensor.s_air_value
+  variables:
+    # trigger.to_state.state 값이 숫자로 변환 불가능할 경우 기본값 0을 사용하도록 수정
+    air_value: "{{ trigger.to_state.state | float(0) }}"
+    color: >-
+      {% if air_value <= 5 %} green
+      {% elif air_value <= 6 %} blue
+      {% elif air_value <= 7 %} orange
+      {% elif air_value <= 8 %} coral
+      {% elif air_value <= 9 %} magenta
+      {% else %} red
+      {% endif %}
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'sensor.air_value' }}"
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: light.co3_airlight
+              data:
+                color_name: "{{ color }}"
+                brightness_pct: 100
+            - service: light.turn_on
+              target:
+                entity_id: light.gateway_light_34ce00812c77
+              data:
+                color_name: "{{ color }}"
+                brightness_pct: 10
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'sensor.s_air_value' }}"
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: light.study_air_light
+              data:
+                color_name: "{{ color }}"
+                brightness_pct: 100
+                
+- alias: "co2 초기화"
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: group.wifi_check
+      to: 'not_home'
+      for:
+        hours: 4
+  action:
+    - service: switch.turn_on
+      entity_id: 
+        - switch.mh_z19_1_calbrate_zero
+        - switch.h_mh_z19_1_calbrate_zero
+    - delay: 00:00:02
+    - service: switch.turn_off
+      entity_id: 
+        - switch.mh_z19_1_calbrate_zero
+        - switch.h_mh_z19_1_calbrate_zero
+        
+- alias: "CO2 Looping Alert"
+  id: 'co2_looping_alert'
+  description: "집안 CO2 1200 초과 시 30분 간격 반복 알림"
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.co2
+      above: 1200
+  condition:
+    - condition: state
+      entity_id: group.wifi_check
+      state: 'home'
+  action:
+    - repeat:
+        while:
+          - condition: numeric_state
+            entity_id: sensor.co2
+            above: 1200
+          - condition: time
+            after: '08:00:00'
+            before: '23:00:00'
+        sequence:
+          - variables:
+              co2_level: "{{ states('sensor.co2') | int(0) }}"
+              is_danger: "{{ co2_level > 2000 }}"
+              message: >-
+                {% if is_danger %}
+                집안의 이산화탄소량이 {{ co2_level }} ppm으로 매우 위험한 상태입니다. 환기해주세요
+                {% else %}
+                집안의 이산화탄소량이 {{ co2_level }} ppm으로 많습니다. 환기해주세요
+                {% endif %}
+          - service: script.universal_notify
+            data:
+              message: "{{ message }}"
+              tv_notify: true
+              android_tv_notify: true
+          - delay:
+              minutes: 30
+
+- alias: "Study Room CO2 Looping Alert"
+  id: 'study_room_co2_looping_alert'
+  description: "CO2가 1200을 넘으면 농도가 낮아질 때까지 30분 간격으로 반복해서 알림"
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.study_co2
+      above: 1200
+  condition:
+    - condition: state
+      entity_id: group.wifi_check
+      state: 'home'
+  action:
+    - repeat:
+        while:
+          - condition: numeric_state
+            entity_id: sensor.study_co2
+            above: 1200
+          - condition: time
+            after: '08:00:00'
+            before: '23:00:00'
+        sequence:
+          - variables:
+              co2_level: "{{ states('sensor.study_co2') | int(0) }}"
+              is_danger: "{{ co2_level > 2000 }}"
+              message: >-
+                {% if is_danger %}
+                공부방 이산화탄소량이 {{ co2_level }} ppm으로 매우 위험한 상태입니다. 환기해주세요
+                {% else %}
+                공부방 이산화탄소량이 {{ co2_level }} ppm으로 많습니다. 환기해주세요
+                {% endif %}
+          - service: script.universal_notify
+            data:
+              message: "{{ message }}"
+              tv_notify: true
+              android_tv_notify: true
+          - delay:
+              minutes: 60
+                
+- alias: air condition
+  initial_state: true
+  description: 미세먼지 수치에 따라 공기청정기 스크립트 실행
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.pm25
+      above: 50
+      for:
+        seconds: 10
+  action:
+    - service: script.universal_notify
+      data:
+        message: "공기가 아주 나쁩니다 공기청정기를 최대로 실행합니다"
+        tv_notify: true
+        android_tv_notify: true
+    - delay: '00:00:08'
+    - service: fan.set_preset_mode
+      target:
+        entity_id: fan.zhimi_m1_3538_air_purifier
+      data:
+        preset_mode: 'Favorite'
+
+- alias: air_condition2
+  initial_state: true
+  trigger:
+    - platform: template
+      value_template: "{{ (states('sensor.pm25')) | int(0) > 29 }}"
+      for: "00:01:00"
+    - platform: template
+      value_template: "{{ (states('sensor.pm25')) | int(0) <= 29 }}"
+      for: "00:01:00"
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ (states('sensor.pm25')) | int(0) > 29 }}"
+          sequence:
+            - service: fan.set_preset_mode
+              target:
+                entity_id: fan.zhimi_m1_3538_air_purifier
+              data:
+                preset_mode: "Favorite"
+      default:
+        - service: fan.set_preset_mode
+          target:
+            entity_id: fan.zhimi_m1_3538_air_purifier
+          data:
+            preset_mode: "Auto"
+            
+- alias: air_condition_final_revised_ver4
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: sensor.pm25
+  action:
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - variables:
+        pm25: "{{ states('sensor.pm25') | int(0) }}"
+        level_data: >
+          {% if pm25 >= 70 %} 10
+          {% elif pm25 >= 60 %} 9
+          {% elif pm25 >= 50 %} 8
+          {% elif pm25 >= 40 %} 7
+          {% elif pm25 >= 30 %} 6
+          {% elif pm25 >= 20 %} 5
+          {% else %} 3
+          {% endif %}
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 >= 70 }}"
+          sequence:
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 70 and (trigger.from_state.state | float(0)) >= 70 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 70 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 60 and trigger.from_state.state | int(0) >= 60 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 60 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 50 and trigger.from_state.state | int(0) >= 50 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 50 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 40 and trigger.from_state.state | int(0) >= 40 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 40 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 30 and trigger.from_state.state | int(0) >= 30 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 30 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ pm25 < 20 and trigger.from_state.state | int(0) >= 20 }}"
+          sequence:
+            - wait_template: "{{ states('sensor.pm25') | int(0) < 20 }}"
+              timeout: "00:03:00"
+              continue_on_timeout: false
+            - service: number.set_value
+              entity_id: number.zhimi_m1_3538_favorite_fan_level
+              data:
+                value: "{{ level_data }}"
+
+- id: dehumidifier_unified_control_revised
+  alias: Dehumidifier Unified Control Revised
+  description: 문과 습도에 따라 제습기 통합 제어 (수정)
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.co3_living_humi
+      above: 67
+      id: 'humidity_high'
+    - platform: numeric_state
+      entity_id: sensor.co3_living_humi
+      below: 63
+      for:
+        minutes: 5
+      id: 'humidity_low'
+    - platform: state
+      entity_id: binary_sensor.0x00158d000708659f_contact
+      to: 'on'
+      id: 'window_opened'
+    - platform: state
+      entity_id: binary_sensor.0x00158d000708659f_contact
+      to: 'off'
+      id: 'window_closed'
+  condition:
+    - condition: template
+      value_template: "{{ not is_state('humidifier.nwt_312en_911e_dehumidifier', 'unavailable') }}"
+  action:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id:
+                - 'window_opened'
+                - 'humidity_low'
+          sequence:
+            - service: humidifier.turn_off
+              target:
+                entity_id: humidifier.nwt_312en_911e_dehumidifier
+        - conditions:
+            - condition: trigger
+              id:
+                - 'humidity_high'
+                - 'window_closed'
+            - condition: state
+              entity_id: binary_sensor.0x00158d000708659f_contact
+              state: 'off'
+            - condition: numeric_state
+              entity_id: sensor.co3_living_humi
+              above: 67
+            - condition: state
+              entity_id: humidifier.nwt_312en_911e_dehumidifier
+              state: 'off'
+          sequence:
+            - service: humidifier.turn_on
+              target:
+                entity_id: humidifier.nwt_312en_911e_dehumidifier
+  mode: single
+
+- alias: 공기청정기 자동 켜짐
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: fan.zhimi_m1_3538_air_purifier # 공기청정기 엔티티 ID로 변경
+      to: 'off'
+  action:
+    - service: fan.turn_on
+      entity_id: fan.zhimi_m1_3538_air_purifier # 공기청정기 엔티티 ID로 변경            

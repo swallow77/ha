@@ -1,0 +1,10 @@
+# - sensor:
+#     name: weather_rain_percent
+#     command: curl -X GET -ss "http://www.kma.go.kr/wid/queryDFSRSS.jsp?zone=1117057000" | grep pop | head -6 | sed s/\<pop\>//g | sed s/\<\\/pop\>//g | sort -rn | head -1
+#     unit_of_measurement: "%"
+#     scan_interval: 3600   
+# - sensor:
+    # name: CPU Temperature
+    # command: 'cat /sys/devices/virtual/thermal/thermal_zone3/temp'
+    # unit_of_measurement: "°C"
+    # value_template: '{{ value | multiply(0.001) | round(1) }}'

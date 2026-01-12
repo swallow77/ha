@@ -1,0 +1,28 @@
+vacation_start:
+  name: "방학 시작일"
+  has_date: true
+  has_time: false
+vacation_end:
+  name: "방학 종료일"
+  has_date: true
+  has_time: false
+hyo_vacation_start:
+  name: "효진 방학 시작일"
+  has_date: true
+  has_time: false
+hyo_vacation_end:
+  name: "효진 방학 종료일"
+  has_date: true
+  has_time: false
+kbo_time:
+  name: "KBO 시간" 
+  has_date: false
+  has_time: true
+kbo_season_start_date:
+  name: KBO Season Start Date
+  has_date: true
+  has_time: false
+kbo_season_end_date:
+  name: KBO Season End Date
+  has_date: true
+  has_time: false

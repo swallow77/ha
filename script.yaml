@@ -1,0 +1,932 @@
+# ======================================================================
+# 1. TTS 큐 관리 스크립트 (TTS 요청을 이벤트로 변환)
+# ======================================================================
+universal_tts_player_queued:
+  alias: Universal TTS Player (Queued)
+  description: 모든 TTS 요청을 이벤트로 변환하여 대기열에 추가합니다.
+  mode: queued
+  max: 10
+  fields:
+    message:
+      description: '재생할 TTS 메시지'
+    entity_id:
+      description: '알림을 재생할 미디어 플레이어'
+    tts_service:
+      description: '사용할 TTS 서비스'
+      default: 'tts.microsoft_say'
+    options:
+      description: 'TTS 서비스에 전달할 추가 옵션'
+      default: {}
+  sequence:
+    - event: queued_tts_request
+      event_data:
+        entity_id: "{{ entity_id }}"
+        message: "{{ message }}"
+        tts_service: "{{ tts_service }}"
+        options: "{{ options }}"
+
+# ======================================================================
+# 2. 통합 알림 스크립트 (모든 알림의 중앙 처리 장치)
+# ======================================================================
+universal_notify:
+  alias: Universal Notifier
+  description: TTS, TV, 모바일 등 모든 알림을 통합하여 처리합니다.
+  fields:
+    message:
+      description: '알림으로 보낼 메시지'
+    tts:
+      description: 'TTS 알림을 보낼지 여부 (true/false)'
+      default: true
+    tts_target:
+      description: 'TTS를 재생할 미디어 플레이어'
+      # default: 'media_player.jeonce2_2'
+      default: 'media_player.jeonce'
+    tts_service:
+      description: '사용할 TTS 서비스'
+      default: 'tts.microsoft_say'
+    tts_options:
+      description: 'TTS 서비스에 전달할 추가 옵션'
+      default: {}
+    tv_notify:
+      description: 'LG TV로 알림을 보낼지 여부 (true/false)'
+      default: false
+    android_tv_notify:
+      description: 안드로이드 TV 알림 여부 (true/false)
+      default: false      
+    push_target:
+      description: "푸시 알림을 보낼 대상 (예: noti_all, noti_house)"
+      default: ''
+    push_title:
+      description: "푸시 알림의 제목"
+      default: 'Home Assistant 알림'
+  sequence:
+    # TTS 알림
+    - choose:
+      - conditions:
+          - "{{ tts | default(true) }}"
+        sequence:
+          - service: script.universal_tts_player_queued
+            data:
+              message: "{{ message }}"
+              entity_id: "{{ tts_target | default('media_player.jeonce') }}"
+              tts_service: "{{ tts_service | default('tts.microsoft_say') }}"
+              options: "{{ options | default({}) }}"
+    # TV 알림
+    - choose:
+      - conditions:
+          - "{{ tv_notify | default(false) }}"
+        sequence:
+          - service: script.notify_lg_tv_safe
+            data:
+              message: "{{ message }}"
+    - choose:
+        - conditions:
+            - "{{ android_tv_notify | default(false) }}"
+          sequence:
+            - service: script.notify_android_tv_safe
+              data:
+                message: "{{ message }}"
+                title: "{{ push_title }}"
+    # 푸시 알림
+    - choose:
+      - conditions:
+          - "{{ push_target is defined and push_target != '' and push_target != None }}"
+        sequence:
+          - service: "notify.{{ push_target }}"
+            data:
+              title: "{{ push_title | default('Home Assistant 알림') }}"
+              message: "{{ message }}"
+              data:
+                priority: high
+
+# ======================================================================
+# 3. 사용자 스크립트 (리팩토링 완료)
+# ======================================================================
+notify_lg_tv_safe:
+  alias: Safe LG TV Notify
+  fields:
+    message:
+      description: 'TV로 보낼 메시지'
+  sequence:
+    - condition: template
+      value_template: "{{ states('media_player.lg_webos_smart_tv') not in ['off', 'unavailable', 'standby'] }}"
+    - service: notify.lg_webos_smart_tv
+      data:
+        message: "{{ message }}"
+
+notify_android_tv_safe:
+  alias: Safe Android TV Notify
+  description: 안드로이드 TV가 켜져 있을 때만 알림 전송
+  fields:
+    message:
+      description: 전송할 메시지
+    title:
+      description: 알림 제목
+  sequence:
+    - condition: template
+      value_template: "{{ states('media_player.smarttv_4k') not in ['off', 'unavailable', 'unknown', 'standby'] }}"
+    - service: notify.hyo_tv
+      data:
+        # title: "{{ title | default('Home Assistant 알림') }}"
+        message: "{{ message }}"
+
+tv_off:
+  alias: TV Off
+  sequence:
+    - service: webostv.command
+      target:
+        entity_id: media_player.lg_webos_smart_tv
+      data:
+        command: "system/turnOff"
+
+humidity_looping_alert:
+  alias: Humidity Looping Alert
+  description: 특정 방의 습도가 비정상일 때 1시간 간격으로 반복 알림을 보냅니다.
+  mode: parallel
+  fields:
+    room_name:
+      description: "방 이름 (예: 공부방, 침실)"
+      example: "공부방"
+    sensor_entity:
+      description: "습도 센서 Entity ID"
+      example: "sensor.0x00158d0002fb4710_humidity"
+  sequence:
+    - repeat:
+        while:
+          # [수정] numeric_state 대신 template 조건 사용 (변수 처리 가능)
+          - condition: template
+            value_template: >-
+              {{ states(sensor_entity) | float(0) > 75 or states(sensor_entity) | float(0) < 40 }}
+        sequence:
+          # 1. 메시지 생성
+          - variables:
+              current_humi: "{{ states(sensor_entity) | float(0) | round(0) }}"
+              msg_status: "{{ '습합니다' if current_humi > 75 else '건조합니다' }}"
+              msg_action: "{{ '창문을 열어 환기해주세요.' if current_humi > 75 else '' }}"
+          
+          # 2. 알림 전송
+          - service: script.universal_notify
+            data:
+              message: "{{ room_name }} 공기가 아주 {{ msg_status }} (현재 {{ current_humi }}%). {{ msg_action }}"
+              tv_notify: true
+              
+          # 3. 1시간 대기 (반복 간격)
+          - delay:
+              hours: 1
+
+daddy_home:
+  alias: Daddy Home
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "아빠는 현재 집근처 에 도착했습니다"
+        push_target: noti_house
+        tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "아빠는 현재 집근처 에 도착했습니다"
+
+daddy_work_out:
+  alias: Daddy Work Out
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "아빠가 퇴근하셨습니다."
+        tv_notify: true
+
+mom_home:
+  alias: Mom Home
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "할머니가 집근처에 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "할머니가 집근처에 도착했습니다"     
+
+mom_out:
+  alias: Mom Out
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "할머니가 외출하셨습니다"
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "할머니가 외출하셨습니다"
+
+mom_hee_out:
+  alias: Mom Hee Out
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "할머니가 고모집에서 나오셨습니다."
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "할머니가 고모집에서 나오셨습니다." 
+
+hee_home:
+  alias: Hee Home
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "고모가 집근처에 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "고모가 집근처에 도착했습니다"
+
+hee_out:
+  alias: Hee Out
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "고모가 집근처에서 나갔습니다."
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "고모가 집근처에서 나갔습니다."
+
+welcome:
+  alias: Welcome Home
+  description: 귀가 시 환영 메시지 및 집안 상태 안내
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: >-
+          어서오세요 환영합니다.
+          할머니는 현재 {{ states('sensor.choi') }}에 있으며,
+          효진이는 현재 {{ states('sensor.hyojin') }}에 있으며,
+          우진이는 현재 {{ states('sensor.woojin') }}에 있습니다.
+          집안의 온도는 {{ states('sensor.living_1_temp') | round(0) }}도 이며,
+          습도는 {{ states('sensor.co3_living_humi') | round(0) }} 퍼센트 입니다.
+          집안의 공기는 {{ states('sensor.zhimi_m1_3538_pm25_density') }} 마이크로 그램 이며,
+          집안의 이산화탄소량은 {{ states('sensor.co2') }} ppm 입니다.
+        # tv_notify: true
+
+morrning_tts:
+  alias: Morning TTS
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: >
+          안녕히 주무셨어요, {% if not is_state('sensor.anniversary_tts', '') -%} {{states('sensor.anniversary_tts')}} 입니다.
+          {%- endif %} 오늘은{{ states('sensor.today_s_date') }} {{ states('sensor.day2') }}이며, 날씨는 {{ states('sensor.hyeonjaenalssijeongbo') }} , 최고온도 {{states('sensor.dw1_village_temperature_max_0') | round(0) }} 도, 최저온도 {{ states('sensor.dw1_village_temperature_min_0') | round(0) }} 도체감온도 {{ states('sensor.dw1_realtime_apparent_temperature') | round(0) }} 도이며, 강수확률은 {{ states('sensor.gangsuhwagryul') }}퍼센트 입니다, 미세먼지는 {{ states('sensor.dw1_airkorea_pm10_grade') }} 상태이며, 초미세먼지는 {{ states('sensor.dw1_airkorea_pm25_grade') }}상태입니다, 오존은 {{ states('sensor.dw1_airkorea_o3_grade') }} 상태입니다, 좋은하루 되세요
+    - delay: '00:15:00'
+    - service: script.morning_outfit_tts
+
+rain_morrning_tts:
+  alias: Rainy Morning TTS
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: >
+          안녕히 주무셨어요, {% if not is_state('sensor.anniversary_tts', '') -%} {{states.sensor.anniversary_tts.state}} 입니다.
+          {%- endif %} 오늘은{{ states('sensor.today_s_date') }} {{ states('sensor.day2') }}이며, 날씨는 {{ states('sensor.hyeonjaenalssijeongbo') }} , 최고온도 {{states('sensor.dw1_village_temperature_max_0') | round(0) }} 도, 최저온도 {{ states('sensor.dw1_village_temperature_min_0') | round(0) }} 도체감온도 {{ states('sensor.dw1_realtime_apparent_temperature') | round(0) }} 도이며, 강수확률은 {{ states('sensor.gangsuhwagryul') }}퍼센트 입니다, 미세먼지는 {{ states('sensor.dw1_airkorea_pm10_grade') }} 상태이며, 초미세먼지는 {{ states('sensor.dw1_airkorea_pm25_grade') }}상태입니다, 오존은 {{ states('sensor.dw1_airkorea_o3_grade') }} 상태입니다, 좋은하루 되세요
+    - delay: '00:15:00'
+    - service: script.morning_outfit_tts
+    - delay: '00:01:00'
+    - service: script.universal_notify
+      data:
+        message: "비가 올수 있으니 우산을 챙기세요"
+        push_target: noti_house
+
+morning_outfit_tts:
+  alias: Morning Outfit TTS
+  description: 날씨 정보로 옷차림을 추천하고 TTS로 안내합니다
+  sequence:
+    - service: google_generative_ai_conversation.generate_content
+      data:
+        prompt: >-
+          다음은 오늘 날씨 정보입니다. 
+          9시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_0900') }} %, 
+          18시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_1800') }} %, 
+          9시 기온: {{ states('sensor.dw1_village_temperature_0_0900') }}도, 
+          18시 기온: {{ states('sensor.dw1_village_temperature_0_1800') }}도, 
+          9시 습도: {{ states('sensor.dw1_village_humidity_0_0900') }}%, 
+          18시 습도: {{ states('sensor.dw1_village_humidity_0_1800') }}%, 
+          9시 풍속: {{ states('sensor.dw1_village_wind_speed_0_0900') }}m/s, 
+          18시 풍속: {{ states('sensor.dw1_village_wind_speed_0_1800') }}m/s, 
+          9시 하늘상태: {{ states('sensor.dw1_village_sky_0_0900') }}, 
+          18시 하늘상태: {{ states('sensor.dw1_village_sky_0_1800') }}, 
+          초미세먼지: {{ states('sensor.comisemeonjideunggeub') }}, 
+          자외선: {{ states('sensor.jaoeseondeunggeub') }}, 
+          체감온도: {{ states('sensor.dw1_realtime_apparent_temperature') }}도 입니다.
+          이 날씨 정보를 종합적으로 고려하여, 외출 시 가장 적절한 옷차림을 아주 자세하게 추천해주십시오. 
+          1. 우산이나 선크림 같은 악세사리는 필요하면 답변해주고 필요없으면 답변하지 말아주세요. 
+          2. 이 응답은 TTS로 음성 안내될 예정이므로, 텍스트에 별표(*), 이중 별표(**) 등 그 어떤 종류의 별표 문자도 절대로 포함해서는 안 됩니다. 또한, 다른 모든 특수문자 사용 및 'Celsius'와 같은 영문 단위 표시도 피해주세요. 모든 온도는 '도'로 표현해주세요. 
+          3. 체감온도를 알려주시고, 추천옷차림을 부드럽고 친절한 말투로 답변 부탁드립니다.
+          4. 별표(*), 이중 별표(**) 등 그 어떤 종류의 별표 답변에 절대 포함하지 말아주세요 매우 중요합니다
+      response_variable: ai_analysis_result
+    - variables:
+        tts_message: >-
+          {% if ai_analysis_result is defined and ai_analysis_result.text is defined %}
+            {{ ai_analysis_result.text }}
+          {% else %}
+            AI 응답을 처리하는데 실패했습니다. HACS 서비스나 응답 구조를 확인해주세요.
+          {% endif %}
+    - service: script.universal_notify
+      data:
+        message: "{{ tts_message }}"
+        tts_target: media_player.jeonce2
+        tts_service: tts.google_cloud_say
+        tts_options:
+          speed: 0.9
+          pitch: -1.5
+    - delay: "00:00:15"
+    - wait_template: "{{ not is_state('media_player.hwajangsil_2', 'playing') }}"    
+
+ai_tts:
+  alias: ai TTS
+  description: 날씨 정보로 옷차림을 추천하고 TTS로 안내합니다
+  sequence:
+    - service: google_generative_ai_conversation.generate_content
+      data:
+        prompt: >-
+          당신은 날씨, 환경등 컨디션 관리 전문가 이며 모든 정보는 최신정보와 전문자료를 참고하고 효율을 따지는 분석가이고 전문가 입니다.
+          다음은 현재 집안과 외부 환경 정보입니다.
+          오늘은 {{ states('sensor.today_s_date') }}며, 시간은 {{ states('sensor.day2') }} 입니다.
+          외부체감 온도: {{ states('sensor.dw1_realtime_apparent_temperature') }}도, 
+          외부온도: {{ states('sensor.dw1_realtime_temperature') }} 도,
+          외부습도: {{ states('sensor.dw1_realtime_humidity') }}%,
+          외부풍속: {{ states('sensor.dw1_realtime_wind_speed') }}m/s,
+          외부하늘상태: {{ states('sensor.dw1_realtime_sky') }},
+          외부미세먼지: {{ states('sensor.dw1_airkorea_pm10_value') }} 마이크로 그램,
+          외부초미세먼지: {{ states('sensor.dw1_airkorea_pm25_value') }} 마이크로 그램,
+          외부 내일 최고온도: {{ states('sensor.dw1_village_temperature_max_1') }} 도,
+          거실온도: {{ states('sensor.living_1_temp')  }} 도,
+          거실습도: {{ states('sensor.co3_living_humi')  }} 퍼센트,
+          거실미세먼지: {{ states('sensor.co3_pm10') }} 마이크로 그램,
+          거실초미세먼지: {{ states('sensor.co3_pm25') }} 마이크로 그램,
+          거실이산화탄소: {{ states('sensor.co2') }} ppm,
+          에어컨 상태: {{ states('climate.aircon') }},
+          제습기 상태: {{ states('humidifier.nwt_312en_911e_dehumidifier') }},
+          거실 창문상태: {{ states('binary_sensor.0x00158d000708659f_contact') }},
+          주방온도: {{ states('sensor.0x00158d0000f19a70_temperature') }} 도,
+          주방습도: {{ states('sensor.0x00158d0000f19a70_humidity') }} 퍼센트,
+          침실온도: {{ states('sensor.0x00158d0002b573e9_temperature')  }} 도,
+          침실습도: {{ states('sensor.0x00158d0002b573e9_humidity')  }} 퍼센트,
+          화장실온도: {{ states('sensor.0x00158d0000fa2832_temperature')  }} 도,
+          화장실습도: {{ states('sensor.0x00158d0000fa2832_humidity')  }} 퍼센트,
+          화장실문 상태: {{ states('binary_sensor.0x00158d0001d850a2_contact') }},
+          공부방온도: {{ states('sensor.0x00158d0002fb4710_temperature')  }} 도,
+          공부방습도: {{ states('sensor.0x00158d0002fb4710_humidity')  }} 퍼센트,
+          공부방 초미세먼지: {{ states('sensor.pm25_3') }} 마이크로 그램,
+          공부방 미세먼지: {{ states('sensor.pm10_3') }} 마이크로 그램,
+          공부방 이산화탄소: {{ states('sensor.study_co2') }} ppm,
+          현재전력량: {{ states('sensor.0x00158d000736da72_power') }} 와트,
+          오늘누적 전력량: {{ states('sensor.energy_day') }} 킬로와트시,
+          어제 누적 전력량: {{ states('sensor.energy_yeste') }} 킬로와트시,
+          전월 누적 전력량: {{ states('sensor.prev_monthly') }} 킬로와트시,
+          당월 예상 전략량: {{ states('sensor.jeongi_kwhto_forecast') }} 킬로와트시,
+          전월 전기요금: {{ states('sensor.jeongi_kwhto_won_prev') }} 원,
+          금월 누적전기요금  {{ states('sensor.jeongi_kwhto_won') }} 원,
+          당원 예상 전기요금: {{ states('sensor.jeongi_kwhto_forecast_won') }} 원,
+          공기청정기 상태: {{ states('fan.zhimi_m1_3538_air_purifier') }},
+          딸 재실여부: {{ states('sensor.hyo_pre') }},
+          아들 재실여부: {{ states('sensor.woo_pre') }},
+          나 재실여부: {{ states('sensor.hoon_irk') }}, 입니다.
+          
+          1. 제가 사는 곳은 대한민국 서울입니다. 
+          2. 이 응답은 TTS로 음성 안내됩니다 고려해서 문장을 만들어주시고, 텍스트에 별표(*), 이중 별표(**) 등 그 어떤 종류의 별표 문자도 절대로 포함해서는 안 됩니다. 또한, 다른 모든 특수문자 사용 및 'Celsius'와 같은 영문 단위 표시도 피해주세요.
+          3. 현재상태를 분석하여 요점만 아주 간단하고 내용은 아주 짧게, 요점을 알려주세요.
+          4. '현재 환경을 고려했을때' 로 시작해주세요
+          5. 집은 지하1층 지상2층 건물의 1층에 12평형에 거주하며, 거실, 주방, 침실, 화장실, 공부방이 있습니다. 창문은 작고 주변에 건물이 많아 바람이 잘 들지 않습니다. 이점 많은 고려해주세요.
+          7. 환경을 분석해서 전자제품을 사용을 권할시 작동중이면 굳이 이야기 해주지 말아주세요
+          8. 화장실 환풍기, 공기청정기는 완전자동화에 의해 작동됩니다.
+          9. 전자제품을 작동이나 조작을 권장할 때는, 해당 제품이 현재 작동 중인지 여부를 확인하고, 전반적이 집의 환경으로 고려하여 조작을 권장하는 시간을 제시해주세요.
+          10. 딸은 침실에서, 아들은 공부방에서, 나는 거실에서 생활하고 취침합니다. 집에 없을시 재실여부는 'not_home'로 표시됩니다. 이것도 고려 해주세요
+          11. 공기청정기, 에어컨, 제습기는 거실에 있습니다.
+          12. 예를들어 현재 시간을 고려하고, 외부 온습도 및 먼지등 환경, 집안의 온습도 및 먼지등 환경, 창문 및 문상태, 전자제품의 작동상태, 전기사용량에 따른 현재 인원 대비 가장 효율적인면을 계산하여 전자제품 가동 추천 및 문을 열지 말지 등 그러한 심도있는 분석을 통해 알려주세요.
+          13. 이 모든걸 상세히 고려하고, 심도있게 분석을 통해, 효율적으로 계산해서 전자제품 작동여부 및 권장시간이나, 문들을 열지 말지등 추후 취해야할 행동계산 분석해 반영해주세요 
+          14. 환경기준은 대한민국 기준으로 분석해주세요
+          15. 답변을 보면 실내온도가 높으니 에어컨을 작동하고 효율을 위해서 창문을 닫으라고 하면서 또 실내공기질이 좋지 않다고 창문을 열라고 권할때가 있습니다. 이러면 제가 어떻게 해야할지 혼란스럽습니다. 
+              모든걸 분석해서 답변시점의 기준으로 알려주고, 추후 얼마후 어떻게 해야할지도 알려주세요
+          위 정보를 바탕으로 답변이 늦어도 되니 심도있는 분석을 통해 집에서 제가 해야할 행동을 추천해주세요.
+      response_variable: ai_analysis_result_home
+    - variables:
+        tts_message1: >-
+          {% if ai_analysis_result_home is defined and ai_analysis_result_home.text is defined %}
+            {{ ai_analysis_result_home.text }}
+          {% else %}
+            AI 응답을 처리하는데 실패했습니다. HACS 서비스나 응답 구조를 확인해주세요.
+          {% endif %}
+    - service: notify.send_message
+      target:
+        entity_id: notify.telegram_bot_794140623_626034401    
+      data:
+        title: '손님'
+        message: "{{ tts_message1 }}"          
+    # - service: script.universal_notify
+    #   data:
+    #     message: "{{ tts_message1 }}"
+    #     tts_target: media_player.jeonce2
+    #     tts_service: tts.google_cloud_say
+    #     tts_options:
+    #       speed: 0.9
+    #       pitch: -1.5
+
+message:
+  alias: Custom Message
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: " {{ states('input_text.text1') }} "
+        push_target: noti_house
+
+livingroom_air_quality:
+  alias: Livingroom Air Quality
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "현재 거실 온도는 {{ states('sensor.living_1_temp') | round(0) }} 도, 습도 {{ states('sensor.co3_living_humi') | round(0) }} 퍼센트, 공기는{{ states('sensor.zhimi_m1_3538_pm25_density') }} 마이크로 그램 이며, 집안의 이산화탄소량은 {{ states('sensor.co2') }} ppm 입니다, 침실 온도는 {{states('sensor.naebangondo_temperature')  | round(0) }}도, 습도 {{ states('sensor.0x00158d0002b573e9_humidity')  | round(0) }}퍼센트 입니다"
+
+hyo_location:
+  alias: Hyo Location
+  sequence:
+    - delay: '00:00:05'
+    - service: script.universal_notify
+      data:
+        message: "효진이는 현재 {{ states('sensor.hyojin') }} 에 있습니다"
+        push_target: noti_house
+        tv_notify: true
+        android_tv_notify: true
+
+woo_location:
+  alias: Woo Location
+  sequence:
+    - delay: '00:00:05'
+    - service: script.universal_notify
+      data:
+        message: "우진이는 현재 {{ states('sensor.woojin') }} 에 있습니다"
+        push_target: noti_house
+        tv_notify: true
+        android_tv_notify: true
+
+hee_location:
+  alias: Hee Location
+  sequence:
+    - delay: '00:00:05'
+    - service: script.universal_notify
+      data:
+        message: "고모는 현재 {{ states('sensor.yuhyi') }} 에 있습니다"
+        push_target: noti_house
+        tv_notify: true
+        android_tv_notify: true
+
+choi_location:
+  alias: Choi Location
+  sequence:
+    - delay: '00:00:05'
+    - service: script.universal_notify
+      data:
+        message: "할머니는 현재 {{ states('sensor.choi') }} 에 있습니다"
+        push_target: noti_house
+        tv_notify: true
+        android_tv_notify: true
+
+all_loaction:
+  alias: All Location
+  sequence:
+    - delay: '00:00:05'
+    - service: script.universal_notify
+      data:
+        message: "현재 할머니는 {{ states('sensor.choi') }} 에 있으며, 고모는 {{ states('sensor.yuhyi') }}에 있으며, 효진이는 {{ states('sensor.hyojin') }}에 있고, 우진이는 {{ states('sensor.woojin') }} 있습니다."
+        push_target: noti_house
+        tv_notify: true
+        android_tv_notify: true
+
+all_out:
+  alias: All Out
+  sequence:
+    - service: homeassistant.turn_off
+      entity_id:
+        - switch.0x00124b0024c0591e
+        - switch.room2_light
+        - light.controller_rgb_64527a
+        - switch.label
+        - switch.print
+        - switch.usb
+        - switch.computer
+        - switch.woo_computer
+        - light.controller_rgb_64527a
+        - switch.desk_lamp
+        - light.study_air_light
+        - switch.my_room
+        - light.jubang
+        - light.ili9341_display_backlight
+        - light.co3_airlight
+        - fan.dmaker_p220_5b40_fan_2
+        - switch.spot_led_power
+        - media_player.lg_webos_smart_tv
+        - switch.0x00124b00257c2696
+        - switch.0x70b3d52b60044b7a
+        - climate.zhimi_za2_beb8_heater
+        - light.showcase
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: "off"
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_mode
+      data:
+        option: 'mopping_after_sweeping'
+    - service: vacuum.set_fan_speed
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        fan_speed: 'Turbo'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_route
+      data:
+        option: 'deep'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+
+cleaner_custom:
+  alias: Cleaner Custom
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'off'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_mode
+      data:
+        option: 'mopping_after_sweeping'
+    - service: vacuum.set_fan_speed
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        fan_speed: 'Strong'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_route
+      data:
+        option: 'deep'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+
+cleaner_ai:
+  alias: Cleaner AI
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'deep_cleaning'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+
+clean_sweep:
+  alias: Clean Sweep
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'off'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_route
+      data:
+        option: 'deep'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_mode
+      data:
+        option: 'sweeping'
+    - service: dreame_vacuum.vacuum_clean_segment
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        segments: 2
+
+food_clean:
+  alias: Food Clean
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'off'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'deep_cleaning'
+    - service: vacuum.set_fan_speed
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        fan_speed: 'Strong'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_route
+      data:
+        option: 'deep'
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleaning_mode
+      data:
+        option: 'sweeping_and_mopping'
+    - service: dreame_vacuum.vacuum_clean_zone
+      data:
+        zone:
+          - - -1050.4838709677424
+            - -1781.9892473118284
+            - 1823.9247311827949
+            - 918.6559139784949
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+
+8briefing:
+  alias: 8 Briefing
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "미세먼지가 높습니다. 마스크를 착용 후 외출하세요"
+        tv_notify: true
+        android_tv_notify: true
+
+o3:
+  alias: O3 Warning
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "오늘 자외선 상태가 {{ states('sensor.dw1_airkorea_o3_grade') }} 으로써 썬크림을 꼭 바르고 외출하세요"
+        tv_notify: true
+        android_tv_notify: true
+
+play_sel_sound:
+  alias: "게이트웨이 소리 "
+  sequence:
+    - condition: state
+      entity_id: input_boolean.mute_gateway_sounds
+      state: 'on'
+    - service: xiaomi_aqara.play_ringtone
+      data:
+        gw_mac: !secret xiaomi_mac
+        ringtone_id: 1
+        ringtone_vol: 100
+    - delay: '00:00:10'
+    - service: script.play_sel_sound_loop
+
+play_sel_sound_loop:
+  alias: "Play selected sound in Loop"
+  sequence:
+    - condition: state
+      entity_id: input_boolean.mute_gateway_sounds
+      state: 'on'
+    - delay: '00:00:00'
+    - service: script.play_sel_sound
+
+toilet_s:
+  alias: Toilet S
+  sequence:
+    - service: esphome.toilet_toilet_s
+
+toilet_b:
+  alias: Toilet B
+  sequence:
+    - service: esphome.toilet_toilet_b
+    - delay: '00:00:05'
+    - service: switch.turn_on
+      entity_id: switch.fresh
+
+7016_bus:
+  alias: 7016 Bus
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "7016버스가 {{ states('sensor.seoul_bus_03146_100100447') }} 후에 도착합니다."
+        tv_notify: true
+        android_tv_notify: true
+
+cover_open:
+  alias: Cover Open
+  sequence:
+    - service: cover.open_cover
+      entity_id: cover.am43_1
+
+cover_close:
+  alias: Cover Close
+  sequence:
+    - service: cover.close_cover
+      entity_id: cover.am43_1
+
+cover_stop:
+  alias: Cover Stop
+  sequence:
+    - service: cover.stop_cover
+      entity_id: cover.am43_1
+
+trace:
+  alias: Trace
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "택배가 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true
+
+deli:
+  alias: Deli
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "음식이 출발했습니다."
+        tv_notify: true
+        android_tv_notify: true
+
+deli_end:
+  alias: Deli End
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "음식이 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true
+
+call:
+  alias: Call
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "아빠 전화왔어요"
+        tv_notify: true
+        android_tv_notify: true
+
+car_detect:
+  alias: Car Detect
+  sequence:
+    - service: automation.turn_on
+      entity_id: automation.car_parking
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: '/media/local/snap/paking.jpg'
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: mobile_app_sm_s911n
+        push_title: >
+          주차 상태: {{ "차량 있음" if states('sensor.in_dome_car_count') | int > 0 else "차량 없음" }}
+        message: >
+          주차 상태: {{ "차량 있음" if states('sensor.in_dome_car_count') | int > 0 else "차량 없음" }}
+    - service: script.universal_notify
+      data:
+        message: >
+          "현재 주차 차량이 {{ "있습니다" if states('sensor.in_dome_car_count') | int > 0 else "없습니다" }}"
+    - service: notify.send_message
+      target:
+        entity_id: notify.telegram_bot_794140623_626034401        
+      data_template:
+        config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+        title: '주차 상태'
+        message: >
+          {{ "차량 있음" if states('sensor.in_dome_car_count') | int > 0 else "차량 없음" }}
+        data:
+          photo:
+            - file: '/media/local/snap/paking.jpg'
+    - delay: '01:00:00'
+    - service: automation.turn_off
+      entity_id: automation.car_parking
+    - service: script.universal_notify
+      data:
+        message: "주차확인을 종료합니다."
+        push_target: noti_house
+
+tv_pause:
+  alias: TV Pause
+  sequence:
+    - service: webostv.button
+      data:
+        entity_id: media_player.lg_webos_smart_tv
+        button: PAUSE
+
+tv_play:
+  alias: TV Play
+  sequence:
+    - service: webostv.button
+      data:
+        entity_id: media_player.lg_webos_smart_tv
+        button: PLAY
+
+bedroom_low:
+  alias: Bedroom Low Temp
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "침실 온도가 낮습니다 창문을 확인해주세요"
+        # tts: false
+        push_target: noti_all
+
+nextion_menu:
+  alias: Nextion Menu
+  sequence:
+    - service: webostv.button
+      data:
+        entity_id: media_player.lg_webos_smart_tv
+        button: MENU
+
+nextion_back:
+  alias: Nextion Back
+  sequence:
+    - service: webostv.button
+      data:
+        entity_id: media_player.lg_webos_smart_tv
+        button: BACK
+
+nextion_enter:
+  alias: Nextion Enter
+  sequence:
+    - service: webostv.button
+      data:
+        entity_id: media_player.lg_webos_smart_tv
+        button: ENTER
+
+mom_in:
+  alias: Mom In
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "할머니가 {{ states('person.halmeoni') }}에 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "할머니가 {{ states('person.halmeoni') }}에 도착했습니다"      
+
+hee_in:
+  alias: Hee In
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "고모가 {{ states('person.yuhyi_2') }}에 도착했습니다"
+        tv_notify: true
+        android_tv_notify: true    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "고모가 {{ states('person.yuhyi_2') }}에 도착했습니다"
+
+trace_total:
+  alias: Trace Total
+  description: 남은 택배 개수를 계산하여 알림 (trace_total 대체)
+  sequence:
+    - variables:
+        count: "{{ states('input_number.trace') | int(0) }}"
+    - service: script.universal_notify
+      data:
+        message: >-
+          {{ '오늘 택배는 더 이상 없습니다.' if count == 0 else '오늘 택배는 ' ~ count ~ '개 남았습니다.' }}
+        tv_notify: true
+        android_tv_notify: true
+
+
+chekin_fail:
+  alias: 출근 실패
+  sequence:
+    - service: script.universal_notify
+      data:
+        message: "출근제출이 실패했습니다 확인해주세요"
+        tv_notify: true
+        android_tv_notify: true        

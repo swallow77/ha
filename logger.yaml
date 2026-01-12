@@ -1,0 +1,27 @@
+# default: fatal
+logs:
+  custom_components.xiaomi_miot.switch: critical
+  homeassistant.components.google_assistant.http: critical
+  homeassistant.components.template.template_entity: critical
+  custom_components.miheater.climate: critical
+  custom_components.xiaomi_miot.humidifier: critical
+  aioesphomeapi.connection: critical
+  homeassistant.components.airkorea: critical
+  custom_components.ble_monitor: critical
+  custom_components.localtuya: critical
+  custom_components.xiaomi_miot: critical
+  homeassistant.components.esphome: critical
+  homeassistant.components.camera: critical
+  custom_components.average: critical
+filters:
+  custom_components.ble_monitor:
+    - "Disconnected - waiting for discovery broadcast"
+  custom_components.daily:
+    - "Updating Daily sensor took longer than the scheduled update interval"
+  homeassistant.components.template:
+    - "Template variable warning"
+  homeassistant.core:
+    - ".*has been deprecated.*"
+    - "Error doing job"
+  homeassistant.components.xiaomi_miot:
+    - "Got MiioException while fetching the state"

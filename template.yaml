@@ -1,0 +1,615 @@
+# 스위치 설정
+- switch:
+    - name: "tv"
+      unique_id: "tv_power_switch"
+      state: "{{ is_state('media_player.lg_webos_smart_tv','on') }}"
+      turn_on:
+        action: switch.turn_on
+        target:
+          entity_id: switch.lg_tv_power
+      turn_off:
+        action: script.turn_on
+        target:
+          entity_id: script.tv_off
+
+    - name: "cleaner"
+      unique_id: "cleaner"
+      state: "{{ is_state('vacuum.l10s_pro_ultra_heat', 'cleaning') }}"
+      turn_on:
+        action: vacuum.start
+        target:
+          entity_id: vacuum.l10s_pro_ultra_heat
+      turn_off:
+        action: vacuum.return_to_base
+        target:
+          entity_id: vacuum.l10s_pro_ultra_heat
+
+# 센서 설정
+- sensor:
+    - name: "hoon_tracker"
+      unique_id: "hoon_tracker"
+      state: >
+        {% if is_state("person.admin", "집") %}home
+        {% elif is_state("person.admin", "성심") %}school
+        {% elif is_state("person.admin", "연희집") %}mapo
+        {% elif is_state("person.admin", "unavailable") %}not_home
+        {% elif is_state("person.admin", "Awaiting Update") %}not_home
+        {% elif is_state("person.admin", "수원") %}suwon
+        {% elif is_state("person.admin", "백화점") %}depat
+        {% elif is_state("person.admin", "헬스장") %}helseujang
+        {% elif is_state("person.admin", "기숙사") %}gisugsa
+        {% elif is_state("person.admin", "효진알바") %}hyojinalba
+        {% elif is_state("person.admin", "연세대") %}yeonsedae
+        {% elif is_state("person.admin", "태권도") %}sport
+        {% elif is_state("person.admin", "용산역") %}yongsanyeog
+        {% elif is_state("person.admin", "재실") %}home
+        {% elif is_state("person.admin", "Home") %}home
+        {% elif is_state("person.admin", "home") %}home
+        {% else %}not_home{% endif %}
+
+    - name: "woojin_tracker"
+      unique_id: "woojin_tracker"
+      state: >
+        {% if is_state("person.ujin", "집") %}home
+        {% elif is_state("person.ujin", "Home") %}home
+        {% elif is_state("person.ujin", "태권도") %}sport
+        {% elif is_state("person.ujin", "스카") %}study
+        {% elif is_state("person.ujin", "unavailable") %}not_home
+        {% elif is_state("person.ujin", "연희집") %}mapo
+        {% elif is_state("person.ujin", "Awaiting Update") %}not_home
+        {% elif is_state("person.ujin", "선린") %}school
+        {% elif is_state("person.ujin", "School") %}school
+        {% elif is_state("person.ujin", "수원") %}suwon
+        {% elif is_state("person.ujin", "백화점") %}depat
+        {% elif is_state("person.ujin", "쩐재") %}friend
+        {% elif is_state("person.ujin", "유희집") %}hee
+        {% elif is_state("person.ujin", "재실") %}home
+        {% elif is_state("person.ujin", "기숙사") %}gisugsa
+        {% elif is_state("person.ujin", "연세대") %}yeonsedae
+        {% elif is_state("person.ujin", "용산역") %}yongsanyeog
+        {% elif is_state("person.ujin", "home") %}home
+        {% else %}not_home{% endif %}
+
+    - name: "hyojin_tracker"
+      unique_id: "hyojin_tracker"
+      state: >
+        {% if is_state("person.hyojin_2", "집") %}home
+        {% elif is_state("person.hyojin_2", "성심") %}school
+        {% elif is_state("person.hyojin_2", "연희집") %}mapo
+        {% elif is_state("person.hyojin_2", "태권도") %}sport
+        {% elif is_state("person.hyojin_2", "unavailable") %}not_home
+        {% elif is_state("person.hyojin_2", "Awaiting Update") %}not_home
+        {% elif is_state("person.hyojin_2", "수원") %}suwon
+        {% elif is_state("person.hyojin_2", "백화점") %}depat
+        {% elif is_state("person.hyojin_2", "헬스장") %}helseujang
+        {% elif is_state("person.hyojin_2", "효진알바") %}hyojinalba
+        {% elif is_state("person.hyojin_2", "기숙사") %}gisugsa
+        {% elif is_state("person.hyojin_2", "연세대") %}yeonsedae
+        {% elif is_state("person.hyojin_2", "용산역") %}yongsanyeog
+        {% elif is_state("person.hyojin_2", "유희집") %}hee
+        {% elif is_state("person.hyojin_2", "재실") %}home
+        {% elif is_state("person.hyojin_2", "Home") %}home
+        {% elif is_state("person.hyojin_2", "home") %}home
+        {% else %}not_home{% endif %}
+
+    - name: "mom_tracker"
+      unique_id: "mom_tracker"
+      state: >
+        {% if is_state("person.halmeoni", "집") %}home
+        {% elif is_state("person.halmeoni", "Home") %}home
+        {% elif is_state("person.halmeoni", "유희집") %}hee
+        {% elif is_state("person.halmeoni", "염리동") %}school
+        {% elif is_state("person.halmeoni", "사용불가") %}not_home
+        {% elif is_state("person.halmeoni", "Awaiting Update") %}not_home
+        {% elif is_state("person.halmeoni", "unavailable") %}not_home
+        {% elif is_state("person.halmeoni", "엄마집") %}mom_home
+        {% else %}not_home{% endif %}
+
+    - name: "hee_tracker"
+      unique_id: "hee_tracker"
+      state: >
+        {% if is_state("person.yuhyi_2", "집") %}home
+        {% elif is_state("person.yuhyi_2", "unavailable") %}check
+        {% elif is_state("person.yuhyi_2", "Home") %}home
+        {% elif is_state("person.yuhyi_2", "home") %}not_home
+        {% elif is_state("person.yuhyi_2", "Awaiting Update") %}not_home
+        {% elif is_state("person.yuhyi_2", "유희집") %}hee
+        {% elif is_state("person.yuhyi_2", "염리동") %}school
+        {% elif is_state("person.yuhyi_2", "엄마집") %}mom_home
+        {% else %}not_home{% endif %}
+
+    - name: "hum_out"
+      unique_id: "hum_out"
+      state: "{{ (states('sensor.dw1_realtime_humidity')) | int(0) - (states('sensor.0x00158d0000fa2832_humidity')) | int(0) < 10 }}"
+
+    - name: "tv_active"
+      unique_id: "tv_active"
+      state: >
+        {% if is_state("sensor.tv_active_1", "onkyo") %}onkyo
+        {% elif is_state("sensor.tv_active_1", "YouTube") %}YouTube
+        {% elif is_state("sensor.tv_active_1", "TVING") %}TVING
+        {% elif is_state("sensor.tv_active_1", "현재 방송") %}tv
+        {% elif is_state("sensor.tv_active_1", "Olleh TV") %}Olleh TV
+        {% elif is_state("sensor.tv_active_1", "Netflix") %}Netflix
+        {% elif is_state("sensor.tv_active_1", "wavve") %}wavve
+        {% elif is_state("sensor.tv_active_1", "왓챠 - 첫 2주 무료! 영화 드라마 무제한 감상") %}watcha
+        {% else %}off{% endif %}
+
+    - name: "workday"
+      unique_id: "workday"
+      state: '{% if is_state("binary_sensor.workday_sensor", "on") %}평일{% else %}휴일{% endif %}'
+      icon: '{% if is_state("binary_sensor.workday_sensor", "on") %}mdi:briefcase{% else %}mdi:exit-run{% endif %}'
+
+    - name: "pc_time_h"
+      unique_id: "pc_time_h"
+      state: >
+        {% set hours = states('sensor.pc_time') | float(0) %}
+        {% set minutes = (hours % 1) * 60 %}
+        {% set hours = hours | int %}
+        {{ '%02d:%02d' | format(hours, minutes | round(0)) }}
+
+    - name: "woo_pc_time_h"
+      unique_id: "woo_pc_time_h"
+      state: >
+        {% set hours = states('sensor.woo_pc_time') | float(0) %}
+        {% set minutes = (hours % 1) * 60 %}
+        {% set hours = hours | int %}
+        {{ '%02d:%02d' | format(hours, minutes | round(0)) }}
+
+    - name: "hee_tracker2"
+      unique_id: "hee_tracker2"
+      state: '{% if is_state("person.yuhyi_2", "유희집") == false %}not_home{% else %}not_applicable{% endif %}'
+
+    - name: "yuhee_out"
+      unique_id: "yuhee_out"
+      attributes:
+        friendly_name: "유희외출시간"
+      state: >
+        {% set hours = states('sensor.yuhyioecul') | float(0)%}
+        {% set minutes = ((hours % 1) * 60) | int %}
+        {% set hours = (hours - (hours % 1)) | int %}
+        {{ '%02i:%02i'%(hours, minutes) }}
+
+    - name: "tv_time_h"
+      unique_id: "tv_time_h"
+      state: >
+        {% set hours = states('sensor.tv_time') | float(0) %}
+        {% set minutes = (hours % 1) * 60 %}
+        {% set hours = hours | int %}
+        {{ '%02d:%02d' | format(hours, minutes | round(0)) }}
+
+    - name: "toilet_distance"
+      unique_id: "toilet_distance"
+      state: '{% if is_state("sensor.tof10120_distance", "unknown") %}2.000{% else %}{{states.sensor.tof10120_distance.state }}{% endif %}'
+
+    - name: "energy_day_kh"
+      unique_id: "energy_day_kh"
+      state: "{{ (states('sensor.energy_day') | float(0) * 0.001) | round(2) }}"
+      unit_of_measurement: "kWh"
+      device_class: energy
+      attributes:
+        state_class: total_increasing
+
+    - name: "energy_yeste_kh"
+      unique_id: "energy_yeste_kh"
+      state: "{{ (states('sensor.energy_yeste') | float(0) * 0.001) | round(1) }}"
+      unit_of_measurement: "kWh"
+      device_class: energy
+      attributes:
+        state_class: total_increasing
+
+    - name: "prev_monthly"
+      unique_id: "prev_monthly"
+      attributes:
+        friendly_name: "전력 전월 사용량"
+        state_class: total_increasing
+      unit_of_measurement: kWh
+      state: "{{ state_attr('sensor.energy_monthly','last_period') |round(1) }}"
+      device_class: energy
+
+    - name: "energy_yeste"
+      unique_id: "energy_yeste"
+      attributes:
+        friendly_name: "전력 전일 사용량"
+        state_class: total_increasing
+      unit_of_measurement: kWh
+      state: "{{ state_attr('sensor.energy_day','last_period') |round(1) }}"
+      device_class: energy
+
+    - name: "today_date_and_day"
+      unique_id: "today_date_and_day"
+      attributes:
+        friendly_name: "오늘 날짜 및 요일"
+      state: >
+        {% set day_map = {'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일',
+                          'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일'} %}
+        {% set day_en = now().strftime('%A') %}
+        {% set day_kr = day_map[day_en] %}
+        {{ now().strftime('%m월 %d일 ') + day_kr }}
+
+    - name: "vacation_mode"
+      unique_id: "vacation_mode"
+      attributes:
+        friendly_name: "방학 모드"
+      state: >-
+        {% set start = states('input_datetime.vacation_start') %}
+        {% set end = states('input_datetime.vacation_end') %}
+        {% if start == 'unknown' or end == 'unknown' %}
+          off
+        {% else %}
+          {% set start_date = as_timestamp(strptime(start, '%Y-%m-%d')) %}
+          {% set end_date = as_timestamp(strptime(end, '%Y-%m-%d')) %}
+          {% set now = now().timestamp() %}
+          {{ 'on' if (now >= start_date and now <= end_date) else 'off' }}
+        {% endif %}
+      icon: >-
+        {% if states('sensor.vacation_mode') == 'on' %}
+          mdi:school
+        {% else %}
+          mdi:school-outline
+        {% endif %}
+
+    - name: "hyo_vacation_mode"
+      unique_id: "hyo_vacation_mode"
+      attributes:
+        friendly_name: "효진 방학 모드"
+      state: >-
+        {% set start = states('input_datetime.hyo_vacation_start') %}
+        {% set end = states('input_datetime.hyo_vacation_end') %}
+        {% if start == 'unknown' or end == 'unknown' %}
+          off
+        {% else %}
+          {% set start_date = as_timestamp(strptime(start, '%Y-%m-%d')) %}
+          {% set end_date = as_timestamp(strptime(end, '%Y-%m-%d')) %}
+          {% set now = now().timestamp() %}
+          {{ 'on' if (now >= start_date and now <= end_date) else 'off' }}
+        {% endif %}
+      icon: >-
+        {% if states('sensor.hyo_vacation_mode') == 'on' %}
+          mdi:school
+        {% else %}
+          mdi:school-outline
+        {% endif %}
+
+    - name: "calendar_shin"
+      unique_id: "calendar_shin"
+      state: '{{ states.calendar.shinyi_iljeong.attributes.message }}'
+
+    - name: "calendar_contacts"
+      unique_id: "calendar_contacts"
+      state: "{{ as_timestamp(states.calendar.shinyi_iljeong.attributes.start_time) | timestamp_custom('%m월%d일') }} {{ states.calendar.shinyi_iljeong.attributes.message }}"
+
+    - name: "calendar_gamil"
+      unique_id: "calendar_gamil"
+      state: "{{ as_timestamp(states.calendar.sdh7707_gmail_com.attributes.start_time) | timestamp_custom('%m월%d일 %I:%M') }} {{ states.calendar.sdh7707_gmail_com.attributes.message }}"
+
+    - name: "calendar_family"
+      unique_id: "calendar_family"
+      state: "{{ as_timestamp(states.calendar.gajog.attributes.start_time) | timestamp_custom('%m월%d일 %H:%M') }} {{ states.calendar.gajog.attributes.message }}"
+
+    - name: "tv_active_1"
+      unique_id: "tv_active_1"
+      state: '{{ state_attr("media_player.lg_webos_smart_tv", "source") | default("off") }}'
+
+    - name: "xiaomi_purifier_mode"
+      unique_id: "xiaomi_purifier_mode"
+      state: '{{ states.fan.zhimi_m1_3538_air_purifier.attributes.preset_mode }}'
+
+    - name: "moon_phases"
+      unique_id: "moon_phases"
+      attributes:
+        friendly_name: 'Moon'
+      state: >-
+        {% if is_state("sensor.moon", "new_moon") %}신월
+        {% elif is_state("sensor.moon", "waxing_crescent") %}초승달
+        {% elif is_state("sensor.moon", "first_quarter") %}반달
+        {% elif is_state("sensor.moon", "waxing_gibbous") %}큰상현달
+        {% elif is_state("sensor.moon", "full_moon") %}보름달
+        {% elif is_state("sensor.moon", "last_quarter") %}하현달
+        {% elif is_state("sensor.moon", "waning_gibbous") %}큰하현달
+        {% else %}초승달{% endif %}
+      picture: >-
+        /local/icons/moon/{{ states('sensor.moon') | default('new_moon') }}.png
+
+    - name: "date"
+      unique_id: "date"
+      attributes:
+        friendly_name: "Today's date"
+      state: "{{ now().strftime('%-m월%-d일') }}"
+
+    - name: "day1"
+      unique_id: "day1"
+      attributes:
+        friendly_name: "data"
+      state: "{{ now().strftime('%A') }}"
+
+    - name: "day2"
+      unique_id: "day2"
+      state: >-
+        {% if is_state("sensor.day1", "Monday") %}월요일
+        {% elif is_state("sensor.day1", "Tuesday") %}화요일
+        {% elif is_state("sensor.day1", "Wednesday") %}수요일
+        {% elif is_state("sensor.day1", "Thursday") %}목요일
+        {% elif is_state("sensor.day1", "Friday") %}금요일
+        {% elif is_state("sensor.day1", "Saturday") %}토요일
+        {% elif is_state("sensor.day1", "Sunday") %}일요일
+        {% else %}일요일{% endif %}
+
+    - name: "r_sleep_time"
+      unique_id: "r_sleep_time"
+      attributes:
+        friendly_name: '총수면'
+      state: "{{ state_attr('sensor.amazfit_sleep', 'sleep') }}"
+
+    - name: "wake_time"
+      unique_id: "wake_time"
+      attributes:
+        friendly_name: '기상'
+      state: >-
+        {{ as_timestamp(state_attr('sensor.amazfit_sleep', 'wake_up_time'), default=none) | timestamp_custom('%p %-I:%M', default='0') }}
+
+    - name: "asleep_time"
+      unique_id: "asleep_time"
+      attributes:
+        friendly_name: '잠든'
+      state: >-
+        {{ as_timestamp(state_attr('sensor.amazfit_sleep', 'bed_time'), default=none) | timestamp_custom('%p %-I:%M', default='0') }}
+
+    - name: "thi_living_room"
+      unique_id: "thi_living_room"
+      attributes:
+        friendly_name: "거실 불쾌지수"
+      icon: mdi:account-alert
+      unit_of_measurement: 'di'
+      state: >
+        {% set t = ((states('sensor.living_1_temp')|float(0)* 1.8)) %}
+        {% set rh = states('sensor.living_1_humi') |float(0)%}
+        {{ (t-(0.55*(1-rh/100)*(t-26))+32)|round(0) }}
+
+    - name: "thi_study_room"
+      unique_id: "thi_study_room"
+      attributes:
+        friendly_name: "효진방 불쾌지수"
+      icon: mdi:account-alert
+      unit_of_measurement: 'di'
+      state: >
+        {% set t = ((states('sensor.hyojinbangondo_temperature')|float(0)* 1.8)) %}
+        {% set rh = states('sensor.hyojinbangondo_humidity') |float(0)%}
+        {{ (t-(0.55*(1-rh/100)*(t-26))+32)|round(0) }}
+
+    - name: "thi_my_room"
+      unique_id: "thi_my_room"
+      attributes:
+        friendly_name: "내방 불쾌지수"
+      icon: mdi:account-alert
+      unit_of_measurement: 'di'
+      state: >
+        {% set t = ((states('sensor.naebangondo_temperature')|float(0)* 1.8)) %}
+        {% set rh = states('sensor.naebangondo_humidity') |float(0)%}
+        {{ (t-(0.55*(1-rh/100)*(t-26))+32)|round(0) }}
+
+    - name: "pm10_value"
+      unique_id: "pm10_value"
+      attributes:
+        friendly_name: "PM10 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm10 = states('sensor.pm10') | float(0) %}
+        {% if pm10 <= 30 %} 1
+        {% elif pm10 <= 50 %} 2
+        {% elif pm10 <= 80 %} 3
+        {% elif pm10 <= 100 %} 4
+        {% elif pm10 <= 150 %} 5
+        {% elif pm10 <= 200 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "pm25_value"
+      unique_id: "pm25_value"
+      attributes:
+        friendly_name: "PM2.5 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm25 = states('sensor.pm25') | float(0) %}
+        {% if pm25 <= 15 %} 1
+        {% elif pm25 <= 30 %} 2
+        {% elif pm25 <= 45 %} 3
+        {% elif pm25 <= 60 %} 4
+        {% elif pm25 <= 75 %} 5
+        {% elif pm25 <= 100 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "pm1_value"
+      unique_id: "pm1_value"
+      attributes:
+        friendly_name: "PM1 점수"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm1 = states('sensor.pm1') | float(0) %}
+        {% if pm1 <= 5 %} 1
+        {% elif pm1 <= 10 %} 2
+        {% elif pm1 <= 20 %} 3
+        {% elif pm1 <= 30 %} 4
+        {% elif pm1 <= 40 %} 5
+        {% elif pm1 <= 50 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "co2_value"
+      unique_id: "co2_value"
+      attributes:
+        friendly_name: "CO2 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set co2 = states('sensor.co2') | float(0) %}
+        {% if co2 <= 500 %} 1
+        {% elif co2 <= 700 %} 2
+        {% elif co2 <= 900 %} 3
+        {% elif co2 <= 1000 %} 4
+        {% elif co2 <= 1200 %} 5
+        {% elif co2 <= 1500 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "air_value"
+      unique_id: "air_value"
+      attributes:
+        friendly_name: "통합 공기 점수"
+      icon: mdi:account-alert
+      state: "{{ (states('sensor.pm10_value') | int + states('sensor.pm25_value') | int + states('sensor.pm1_value') | int + states('sensor.co2_value') | int) }}"
+
+    - name: "s_pm10_value"
+      unique_id: "s_pm10_value"
+      attributes:
+        friendly_name: "서재 PM10 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm10 = states('sensor.pm10_3') | float(0) %}
+        {% if pm10 <= 30 %} 1
+        {% elif pm10 <= 50 %} 2
+        {% elif pm10 <= 80 %} 3
+        {% elif pm10 <= 100 %} 4
+        {% elif pm10 <= 150 %} 5
+        {% elif pm10 <= 200 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "s_pm25_value"
+      unique_id: "s_pm25_value"
+      attributes:
+        friendly_name: "서재 PM2.5 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm25 = states('sensor.pm25_3') | float(0) %}
+        {% if pm25 <= 15 %} 1
+        {% elif pm25 <= 30 %} 2
+        {% elif pm25 <= 45 %} 3
+        {% elif pm25 <= 60 %} 4
+        {% elif pm25 <= 75 %} 5
+        {% elif pm25 <= 100 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "s_pm1_value"
+      unique_id: "s_pm1_value"
+      attributes:
+        friendly_name: "서재 PM1 점수"
+      icon: mdi:account-alert
+      state: >-
+        {% set pm1 = states('sensor.pm1_3') | float(0) %}
+        {% if pm1 <= 5 %} 1
+        {% elif pm1 <= 10 %} 2
+        {% elif pm1 <= 20 %} 3
+        {% elif pm1 <= 30 %} 4
+        {% elif pm1 <= 40 %} 5
+        {% elif pm1 <= 50 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "s_co2_value"
+      unique_id: "s_co2_value"
+      attributes:
+        friendly_name: "서재 CO2 점수 (실내 기준)"
+      icon: mdi:account-alert
+      state: >-
+        {% set co2 = states('sensor.study_co2') | float(0) %}
+        {% if co2 <= 500 %} 1
+        {% elif co2 <= 700 %} 2
+        {% elif co2 <= 900 %} 3
+        {% elif co2 <= 1000 %} 4
+        {% elif co2 <= 1200 %} 5
+        {% elif co2 <= 1500 %} 6
+        {% else %} 7
+        {% endif %}
+
+    - name: "s_air_value"
+      unique_id: "s_air_value"
+      attributes:
+        friendly_name: "서재 통합 공기 점수"
+      icon: mdi:account-alert
+      state: "{{ (states('sensor.s_pm10_value') | int + states('sensor.s_pm25_value') | int + states('sensor.s_pm1_value') | int + states('sensor.s_co2_value') | int) }}"
+
+    - name: "apparent_temperature"
+      unique_id: "apparent_temperature"
+      attributes:
+        friendly_name: "거실 체감온도"
+      icon: mdi:thermometer
+      unit_of_measurement: '°C'
+      state: >-
+        {% set ft = ((states('sensor.living_1_temp')|float(0)* 1.8) + 32) %}
+        {% set rh = states('sensor.living_1_humi')|float(0)%}
+        {% set hi= -42.379 + 2.04901523*ft + 10.14333127*rh - 0.22475541*ft*rh - 0.00683783*ft*ft - 0.05481717*rh*rh + 0.00122874*ft*ft*rh + 0.00085282*ft*rh*rh - 0.00000199*ft*ft*rh*rh %}
+        {% if hi < 80 %}
+          {{ (((0.5*(ft+61+((ft-68)*1.2)+(rh*0.094)))-32)*5/9)|round(1) }}
+        {% elif rh > 85 and 80 < ft < 87 %}
+          {{ (((hi + ((rh-85)/10)*((87-ft)/5))-32)*5/9)|round(1) }}
+        {% elif rh < 13 and 80 < ft < 112 %}
+          {{ (((hi - ((13-rh)/4)*(sqrt((17-(ft-95)|abs)/17)))-32)*5/9)|round(1) }}
+        {% else %}
+          {{ ((hi-32)*5/9)|round(1) }}
+        {% endif %}
+
+    - name: "apparent_temperature_study"
+      unique_id: "apparent_temperature_study"
+      attributes:
+        friendly_name: "공부방 체감온도"
+      icon: mdi:thermometer
+      unit_of_measurement: '°C'
+      state: >-
+        {% set ft = ((states('sensor.hyojinbangondo_temperature')|float(0)* 1.8) + 32) %}
+        {% set rh = states('sensor.hyojinbangondo_humidity')|float(0)%}
+        {% set hi= -42.379 + 2.04901523*ft + 10.14333127*rh - 0.22475541*ft*rh - 0.00683783*ft*ft - 0.05481717*rh*rh + 0.00122874*ft*ft*rh + 0.00085282*ft*rh*rh - 0.00000199*ft*ft*rh*rh %}
+        {% if hi < 80 %}
+          {{ (((0.5*(ft+61+((ft-68)*1.2)+(rh*0.094)))-32)*5/9)|round(1) }}
+        {% elif rh > 85 and 80 < ft < 87 %}
+          {{ (((hi + ((rh-85)/10)*((87-ft)/5))-32)*5/9)|round(1) }}
+        {% elif rh < 13 and 80 < ft < 112 %}
+          {{ (((hi - ((13-rh)/4)*(sqrt((17-(ft-95)|abs)/17)))-32)*5/9)|round(1) }}
+        {% else %}
+          {{ ((hi-32)*5/9)|round(1) }}
+        {% endif %}
+
+    - name: "apparent_temperature_bedroom"
+      unique_id: "apparent_temperature_bedroom"
+      attributes:
+        friendly_name: "침실 체감온도"
+      icon: mdi:thermometer
+      unit_of_measurement: '°C'
+      state: >-
+        {% set ft = ((states('sensor.naebangondo_temperature')|float(0)* 1.8) + 32) %}
+        {% set rh = states('sensor.naebangondo_humidity')|float(0)%}
+        {% set hi= -42.379 + 2.04901523*ft + 10.14333127*rh - 0.22475541*ft*rh - 0.00683783*ft*ft - 0.05481717*rh*rh + 0.00122874*ft*ft*rh + 0.00085282*ft*rh*rh - 0.00000199*ft*ft*rh*rh %}
+        {% if hi < 80 %}
+          {{ (((0.5*(ft+61+((ft-68)*1.2)+(rh*0.094)))-32)*5/9)|round(1) }}
+        {% elif rh > 85 and 80 < ft < 87 %}
+          {{ (((hi + ((rh-85)/10)*((87-ft)/5))-32)*5/9)|round(1) }}
+        {% elif rh < 13 and 80 < ft < 112 %}
+          {{ (((hi - ((13-rh)/4)*(sqrt((17-(ft-95)|abs)/17)))-32)*5/9)|round(1) }}
+        {% else %}
+          {{ ((hi-32)*5/9)|round(1) }}
+        {% endif %}
+
+    - name: "today_icon"
+      unique_id: "today_icon"
+      state: >-
+        {% if is_state("weather.damda_weather1","clear-night") %}9
+        {% elif is_state("weather.damda_weather1","sunny") %}9
+        {% elif is_state("weather.damda_weather1","cloudy") %}11
+        {% elif is_state("weather.damda_weather1","흐림") %}15
+        {% elif is_state("weather.damda_weather1","partlycloudy") %}10
+        {% elif is_state("weather.damda_weather1","rain") %}12
+        {% elif is_state("weather.damda_weather1","snow") %}13
+        {% elif is_state("weather.damda_weather1","흐리고 한때 눈") %}17
+        {% else %}14
+        {% endif %}
+
+    - name: "remote_state"
+      unique_id: "remote_state"
+      state: >-
+        {% if state_attr("remote.living", "current_activity")  =="nomal" %}TV
+        {% elif state_attr("remote.living", "current_activity")  =="nomal-i" %}Olleh
+        {% elif state_attr("remote.living", "current_activity")  =="nomal-a" %}KODI
+        {% elif state_attr("remote.living", "current_activity")  =="mi" %}MI
+        {% else %}off
+        {% endif %}

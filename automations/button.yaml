@@ -1,0 +1,510 @@
+- alias: 샤오미 벽스위치
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/0x00158d0002f01bcc'
+  action:
+    - choose:
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'single_right' }}"
+          sequence:
+            - service: script.turn_on
+              entity_id: script.toilet_s
+            - service: switch.turn_on
+              entity_id: switch.fresh
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'single_left' }}"
+          sequence:
+            - service: script.turn_on
+              entity_id: script.toilet_b
+            - service: switch.turn_on
+              entity_id: switch.fresh
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'single_both' }}"
+          sequence:
+            - service: light.toggle
+              entity_id: light.fastled_ws2811_light
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'double_right' }}"
+          sequence:
+            - service: media_player.turn_off
+              entity_id: media_player.hwajangsil
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'double_left' }}"
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.fresh
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'hold_left' }}"
+          sequence:
+            - service: light.turn_on
+              data_template:
+                entity_id: light.fastled_ws2811_light
+                effect: "Color Wipe"
+        # - conditions: 
+            # - condition: template
+              # value_template: "{{ trigger.payload_json.action == 'hold_right' }}"
+          # sequence:
+            # - wait_template: "{{ is_state('switch.0x00124b0024c05975', 'off') }}"
+            # - service: switch.turn_on
+              # entity_id: switch.0x00124b0024c05975
+            # - delay: 00:00:10
+            # - service: switch.turn_on
+              # entity_id: switch.fresh
+            # - delay: 00:00:20
+            # - service: switch.turn_on
+              # entity_id: switch.fresh
+            # - delay: 00:10:00
+            # - service: switch.turn_off
+              # entity_id: switch.0x00124b0024c05975
+            # - delay: 00:00:05
+            # - service: switch.turn_on
+              # entity_id: switch.fresh
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'double_both' }}"
+          sequence:
+            - service: light.turn_off
+              entity_id: light.fastled_ws2811_light
+            - service: media_player.turn_off
+              entity_id: media_player.hwajangsil
+
+  
+- alias: 샤오미 qube
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/qube'
+  action:
+    - choose:
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'shake') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.desk_lamp
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'flip90') }}"
+        sequence:
+          - service: light.toggle
+            entity_id: light.showcase
+      # - conditions: 
+      #     - condition: template
+      #       value_template: "{{ (trigger.payload_json.action == 'tap') }}"
+      #   sequence:
+      #     - service: switch.toggle
+      #       entity_id: switch.room_plug_usb
+      # - conditions: 
+          # - condition: template
+            # value_template: "{{ (trigger.payload_json.action == 'flip180') }}"
+        # sequence:
+          # - service: script.turn_on
+            # entity_id: script.black_fan
+      # - conditions: 
+          # - condition: template
+            # value_template: "{{ (trigger.payload_json.action == 'rotate_right') }}"
+        # sequence:
+          # - service: script.turn_on
+            # entity_id: script.black_fan_rotation
+      # - conditions: 
+          # - condition: template
+            # value_template: "{{ (trigger.payload_json.action == 'rotate_left') }}"
+        # sequence:
+          # - service: script.turn_on
+            # entity_id: script.black_fan_up     
+- alias: ikea_button
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/ikea'
+  action:
+    - choose:
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action in ['toggle', 'brightness_up_click', 'brightness_up_hold'] }}"
+          sequence:
+            - service: switch.toggle
+              entity_id: 
+                - switch.3d_peurinteo
+                - switch.3d_peurinteo_usb
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'arrow_right_click' }}"
+          sequence:
+            - service: webostv.button
+              data:
+                entity_id: media_player.lg_webos_smart_tv
+                button: RIGHT
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'arrow_right_hold' }}"
+          sequence:
+            - service: webostv.command
+              data:
+                entity_id: media_player.lg_webos_smart_tv
+                command: media.controls/fastForward
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'arrow_left_click' }}"
+          sequence:
+            - service: button.press
+              entity_id: button.octoprint_pause_job
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'arrow_left_hold' }}"
+          sequence:
+            - service: button.press
+              entity_id: button.octoprint_resume_job
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'brightness_down_hold' }}"
+          sequence:
+            - service: webostv.button
+              data:
+                entity_id: media_player.lg_webos_smart_tv
+                button: CC
+              
+- alias: 4button
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/0x847127fffedab1b8'
+  action:
+    - choose:
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '1_single') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.0x00124b0024c0591e
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '1_double') }}"
+        sequence:
+          - service: cover.set_cover_position
+            target:
+              entity_id: cover.am43_1
+            data:
+              position: 28
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '1_hold') }}"              
+        sequence:
+          - service: cover.set_cover_position
+            target:
+              entity_id: cover.am43_1
+            data:
+              position: 28
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '2_single') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: 
+              - switch.0x00124b00257c2696             
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '2_double') }}"
+        sequence:
+          - service: homeassistant.toggle
+            entity_id: 
+              - light.jubang
+              - switch.spot_led_power
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '2_hold') }}"
+        sequence:
+          - service: script.turn_on
+            entity_id: 
+              - script.all_loaction
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '3_single') }}"
+        sequence:
+          - service: camera.play_stream
+            data:
+              media_player: media_player.maegseu
+              format: hls
+            target:
+              entity_id: camera.outdom_cast
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '3_double') }}"
+        sequence:
+          - service: camera.play_stream
+            data:
+              media_player: media_player.maegseu
+              format: hls
+            target:
+              entity_id: camera.indom_cast
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '3_hold') }}"
+        sequence:
+          - service: camera.play_stream
+            data:
+              media_player: media_player.maegseu              
+            target:
+              entity_id: camera.in_dome
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '4_hold') }}"              
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.room3_2
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '4_single') }}"              
+        sequence:
+          - service: cover.open_cover
+            entity_id: cover.am43_1
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == '4_double') }}"              
+        sequence:
+          - service: cover.close_cover
+            entity_id: cover.am43_1  
+  
+  
+- alias: 샤오미 qube2
+  mode: restart
+  initial_state: true
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/0x00158d00042d6d7a'
+  action:
+    - choose:
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'flip180') }}"
+        sequence:
+          - service: fan.decrease_speed
+            entity_id: fan.xiaomi_fan
+            data:
+              percentage_step: 25
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'rotate_right') }}"
+        sequence:
+          - service: fan.oscillate
+            entity_id: fan.xiaomi_fan
+            data:
+              oscillating: true
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'rotate_left') }}"
+        sequence:
+          - service: fan.oscillate
+            entity_id: fan.xiaomi_fan
+            data:
+              oscillating: false
+      # - conditions: 
+          # - condition: template
+            # value_template: "{{ (trigger.payload_json.action == 'tap') }}"
+        # sequence:
+          # - service: script.turn_on
+            # entity_id: script.cover_stop
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'shake') }}"
+        sequence:
+          - service: light.toggle
+            entity_id: light.controller_rgb_64527a
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'flip90') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.my_room
+
+- alias: xiaomi_circle_button
+  initial_state: true
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/둥근버튼'
+  action:  
+    - choose:
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'single') }}"
+        sequence:
+          - service: homeassistant.turn_on
+            entity_id:
+              - switch.adaptive_lighting_jubang
+              - switch.adaptive_lighting_adapt_brightness_jubang
+              - switch.adaptive_lighting_adapt_color_jubang
+              # - switch.adaptive_lighting_sleep_mode_jubang
+              - automation.auto_light_combined
+          - service: light.toggle
+            entity_id: light.jubang        
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'double') }}"
+        sequence:
+          - service: homeassistant.turn_off
+            entity_id: 
+              - switch.adaptive_lighting_jubang
+              - switch.adaptive_lighting_adapt_brightness_jubang
+              - switch.adaptive_lighting_adapt_color_jubang   
+              - switch.adaptive_lighting_sleep_mode_jubang
+              - automation.auto_light_combined  
+          - service: light.turn_on
+            data:
+              kelvin: 6500
+              brightness_pct: 100
+            target:
+              entity_id: light.jubang
+      # - conditions: 
+      #    - condition: template
+      #      value_template: "{{ (trigger.payload_json.action == 'triple') }}"
+      #   sequence:
+      #     - service: switch.turn_on
+      #       entity_id: 
+      #         - switch.jubang_usb
+      #     - delay: 00:16:00
+      #     - service: switch.turn_off
+      #       entity_id: switch.jubang_usb
+      # - conditions: 
+      #    - condition: template
+      #      value_template: "{{ (trigger.payload_json.action == 'quadruple') }}"
+      #   sequence:
+      #     - service: switch.turn_off
+      #       entity_id: switch.jubang_usb
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'long_release') }}"
+        sequence:
+          - service: alarm_control_panel.alarm_disarm
+            entity_id: alarm_control_panel.lumi_gateway_v3_alarm
+          - service: media_player.turn_off
+            entity_id: media_player.hwajangsil
+          - service: script.universal_notify
+            data:
+              message: "경비모드를 해제합니다"
+          - service: xiaomi_aqara.stop_ringtone
+            data:
+              gw_mac: !secret xiaomi_mac    
+      
+        
+- alias: 샤오미 네모
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/네모버튼'
+  action:
+    - choose:
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'single') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.0x00124b0024c0591e
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'double') }}"
+        sequence:
+          - service: switch.toggle
+            entity_id: switch.spot_led_power
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'triple') }}"
+        sequence:
+          - service: camera.play_stream
+            data_template:
+              entity_id: camera.in_dome
+              media_player: media_player.maegseu 
+      - conditions: 
+          - condition: template
+            value_template: "{{ (trigger.payload_json.action == 'quadruple') }}"
+        sequence:
+          - service: camera.play_stream
+            data_template:
+              entity_id: camera.r4_f
+              media_player: media_player.maegseu 
+
+- alias: nobe
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/0xe8e07efffec09534'
+  action:
+    - choose:
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'single' }}"
+          sequence:
+            - service: automation.toggle
+              entity_id: automation.auto_light_combined
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'double' }}"
+          sequence:
+            - service: webostv.button
+              data:
+                entity_id: media_player.lg_webos_smart_tv
+                button: PLAY
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'rotate_left' }}"
+          sequence:
+            - service: input_number.decrement
+              data:
+                entity_id: input_number.trace           
+            # - service: webostv.button
+            #   data:
+            #     entity_id: media_player.lg_webos_smart_tv
+            #     button: LEFT
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == 'rotate_right' }}"
+          sequence:
+            - service: input_number.increment
+              data:
+                entity_id: input_number.trace           
+            # - service: webostv.button
+            #   data:
+            #     entity_id: media_player.lg_webos_smart_tv
+            #     button: RIGHT
+      default: []
+              
+- alias: woo_remote
+  mode: restart
+  trigger:
+    platform: mqtt
+    topic: 'zigbee2mqtt/0x8c8b48fffe6cc220'
+  action:
+    - choose:
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == '1_single' }}"
+          sequence:
+            - service: switch.toggle
+              entity_id: switch.desk_lamp
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == '2_single' }}"
+          sequence:
+            - service: light.toggle
+              entity_id: light.showcase
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == '3_single' }}"
+          sequence:
+            - service: cover.open_cover
+              entity_id: cover.study_curtain_gongbubang_keoteun
+        - conditions: 
+            - condition: template
+              value_template: "{{ trigger.payload_json.action == '4_single' }}"
+          sequence:
+            - service: cover.close_cover
+              entity_id: cover.study_curtain_gongbubang_keoteun
+
+      default: []
+              

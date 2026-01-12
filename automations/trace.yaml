@@ -1,0 +1,129 @@
+- alias: 택배 도착 알림
+  id: 택배_도착_알림
+  trigger:
+    - platform: state
+      entity_id: input_number.trace
+  action:
+    - service: script.trace_total
+
+- alias: 택배 도착 체크
+  id: 택배_도착_체크
+  description: 택배오면 ai가 체크함
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.zone_1_person_occupancy
+      to: 'on'
+  condition:
+    - condition: numeric_state
+      entity_id: input_number.trace
+      above: 0
+  action:
+    - service: ai_task.generate_data
+      data:
+        filenames: /config/www/snap/door.jpg
+        prompt: >-
+          사진은 위에서 바라보는 사진이야 왼쪽이 우리집인데데 택배를 배달하는것 같거나, 조그만한 수레등을 가지고 택배 배달 같거나, 무언가를 들고 문으로 향하면 간단하게 '택배가 온 거 같습니다' 해주고 아니면 '방문' 이라고 표시해줘
+      response_variable: generated_content
+    - service: input_text.set_value
+      data_template:
+        value: "{{ generated_content.text }}"
+      target:
+        entity_id: input_text.trace_text
+        
+
+- alias: 택배 확인
+  id: '택배 확인'
+  trigger:
+    - platform: state
+      entity_id: input_text.trace_text
+      to: '택배가 온 거 같습니다.'
+  condition:
+    - condition: time
+      after: '11:00:00'
+      before: '20:00:00'
+    - condition: numeric_state
+      entity_id: input_number.trace
+      above: 0
+  action:
+    - service: script.universal_notify
+      data:
+        message: "택배가 도착한것 같습니다 확인해주세요"
+        tv_notify: true        
+    # - service: notify.noti_all
+    #   data_template:
+    #     message: "{{ message }}"
+    - delay: 00:00:08    
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.maegseu
+        media_content_type: image/jpeg
+        media_content_id: https://sdh7707.net/local/snap/door.jpg
+    - service: input_text.set_value
+      entity_id: input_text.trace_text
+      data:
+        value: " "
+
+
+- alias: 차량
+  id: '차량'
+  initial_state: true
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.indome_car_zone_car_occupancy
+      from: 'off'
+      to: 'on'
+  condition:
+    - condition: numeric_state
+      entity_id: input_number.trace
+      above: 0      
+  action:
+    - service: camera.snapshot
+      data:
+        entity_id: camera.in_dome
+        filename: /config/www/snap/car.jpg
+    - delay: 00:00:02
+    - service: ai_task.generate_data
+      data:
+        filenames: /config/www/snap/car.jpg
+        prompt: >-
+          자동차 중에 승용차, SUV, 노란색 차량, 적재함이 오픈되어 있는 차량 빼고 화물차가 보이면 간단하게 '택배차량' 이라고 표시해줘 없으면 '없음'으로만 표시해
+      response_variable: generated_content
+    - service: input_text.set_value
+      data_template:
+        value: "{{ generated_content.text }}"
+      target:
+        entity_id: input_text.car_text
+
+
+- alias: 택배차량 알림
+  id: '택배차량 알림'
+  trigger:
+    - platform: state
+      entity_id: input_text.car_text
+      to: '택배차량'
+  condition:
+    - condition: and
+      conditions:
+        - condition: time
+          after: '12:00:00'
+          before: '19:00:00'
+        - condition: numeric_state
+          entity_id: input_number.trace
+          above: 0  # input_number.trace 값이 1 이상인지 확인
+  action:
+    - service: script.universal_notify
+      data:
+        message: '택배차량 도착'
+        tv_notify: true 
+    # - service: notify.noti_all
+    #   data_template:
+    #     message: "{{ message }}"
+    - delay: 00:00:02
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.maegseu # media_player.maegseu 엔티티가 존재하는지 확인 필요
+        media_content_type: image/jpeg
+        media_content_id: https://sdh7707.net/local/snap/car.jpg          

@@ -1,0 +1,235 @@
+- alias: Cleaning Automation Modified
+  id: cleaning_automation_modified
+  description: 로봇청소기 건조 센서가 비활성화될 때 청소 자동화
+  trigger:
+    - platform: time
+      at: "08:00:02"
+      id: weekday_8am
+    - platform: time
+      at: "11:00:02"
+      id: eleven_am
+    - platform: state
+      entity_id:
+        - sensor.hyo_pre
+        - sensor.woo_pre
+      to: "not_home"
+      id: away
+    - platform: time
+      at: "09:01:00"
+      id: vacation 
+  condition:
+    - condition: and
+      conditions:
+        - condition: state
+          entity_id: sensor.l10s_pro_ultra_heat_drying_progress
+          state: 'unavailable'
+        - condition: or
+          conditions:
+            - condition: template
+              value_template: >
+                {{ trigger.id == 'away'
+                  and 8 <= now().hour < 11
+                  and is_state('sensor.hyo_pre', 'not_home')
+                  and is_state('sensor.woo_pre', 'not_home')
+                  and is_state('input_boolean.cleaned_today', 'off')
+                  and not is_state('vacuum.l10s_pro_ultra_heat', 'cleaning') }}
+            - condition: template
+              value_template: >
+                {{ trigger.id == 'weekday_8am'
+                  and is_state('binary_sensor.workday_sensor', 'on')
+                  and is_state('sensor.vacation_mode', 'off')
+                  and is_state('input_boolean.cleaned_today', 'off')
+                  and not is_state('vacuum.l10s_pro_ultra_heat', 'cleaning') }}
+            - condition: template
+              value_template: >
+                {{ trigger.id == 'vacation'
+                  and is_state('binary_sensor.workday_sensor', 'on')
+                  and is_state('sensor.vacation_mode', 'on')
+                  and is_state('input_boolean.cleaned_today', 'off')
+                  and not is_state('vacuum.l10s_pro_ultra_heat', 'cleaning') }}
+            - condition: template
+              value_template: >
+                {{ trigger.id == 'eleven_am'
+                  and is_state('input_boolean.cleaned_today', 'off')
+                  and not is_state('vacuum.l10s_pro_ultra_heat', 'drying') }}
+  action:
+    - service: script.universal_notify
+      data:
+        message: "1분 후에 청소합니다 정리해주세요"
+    - delay:
+        seconds: 50
+    - choose:
+        - conditions: >
+            {{ is_state('sensor.vacation_mode', 'on') or is_state('binary_sensor.workday_sensor', 'off') }}
+          sequence:
+            - service: script.turn_on
+              target:
+                entity_id: script.cleaner_ai
+        - conditions: "{{ now().weekday() == 0 }}"  # 월요일 조건 (0은 월요일)
+          sequence:
+            - service: button.press
+              target:
+                entity_id: button.l10s_pro_ultra_heat_shortcut_3
+        - conditions: "{{ now().day | int % 2 == 0 }}"
+          sequence:
+            - service: script.turn_on
+              target:
+                entity_id: script.cleaner_ai
+        - conditions: "{{ now().day | int % 2 != 0 }}"
+          sequence:
+            - service: script.turn_on
+              target:
+                entity_id: script.cleaner_custom
+    - service: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.cleaned_today
+  mode: single
+
+- alias: auto cleaner_stop
+  initial_state: true
+  trigger:
+    # - platform: state
+    #   entity_id: group.wifi_check
+    #   from: 'not_home'
+    #   to: 'home'
+    - platform: state
+      entity_id: input_boolean.welcome
+      from: 'on'
+      to: 'off'  
+  # condition:
+  #   condition: and
+  #   conditions:
+  #     - condition: state
+  #       entity_id: vacuum.l10s_pro_ultra_heat
+  #       state: 'cleaning'
+      # - condition: state
+      #   entity_id: sensor.hoon_irk
+      #   state: 'not_home'  
+      # - condition: template
+      #   value_template: "{{ now().hour >= 12 }}"
+  action:
+    # - service: vacuum.stop
+    #   entity_id:
+    #     - vacuum.l10s_pro_ultra_heat
+    - service: vacuum.return_to_base
+      entity_id: 
+        - vacuum.l10s_pro_ultra_heat
+            
+
+- alias: food_table_cleanup_trigger
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.0x00158d000543509a_angle_x
+      above: 1
+      below: 3
+  action:
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.food
+
+- alias: food_table_cleanup
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.0x00158d000543509a_angle_x
+      above: 10
+      below: 19
+      # entity_id: binary_sensor.0x00158d000543509a_vibration
+      # to: 'tilt'
+  condition:
+    - condition: state
+      entity_id: input_boolean.food
+      state: 'on'
+  action:
+    - service: script.universal_notify
+      data:
+        message: "1분 후에 식사자리 청소합니다."
+    - delay: '00:00:57'
+    - service: script.universal_notify
+      data:
+        message: "식사자리 청소합니다."
+    - service: script.food_clean
+
+- alias: Stable Room Light Control
+  description: "청소기가 한 방에 3초 이상 머물면 조명 제어"
+  id: stable_room_light_ctrl
+  trigger:
+    - platform: state
+      entity_id: sensor.l10s_pro_ultra_heat_current_room
+      for:
+        seconds: 3
+  condition:
+    - condition: state
+      entity_id: vacuum.l10s_pro_ultra_heat
+      state: 'cleaning'
+    - condition: state
+      entity_id: sensor.hyo_pre
+      state: 'not_home'
+    - condition: state
+      entity_id: sensor.woo_pre
+      state: 'not_home'
+    - condition: template
+      value_template: "{{ trigger.to_state.state is not none and trigger.to_state.state not in ['unavailable', 'unknown'] }}"
+  variables:
+    current_room: "{{ trigger.to_state.state }}"
+    previous_room: "{{ trigger.from_state.state }}"
+    room_mapping:
+      Living Room: "switch.0x00124b0024c0591e"
+      Primary Bedroom: "switch.my_room"
+      Room 4: "switch.desk_lamp"
+    current_light: "{{ room_mapping.get(current_room) }}"
+    previous_light: "{{ room_mapping.get(previous_room) }}"
+  action:
+    - if:
+        - condition: template
+          value_template: "{{ current_light is not none }}"
+      then:
+        - service: switch.turn_on
+          target:
+            entity_id: "{{ current_light }}"
+    - if:
+        - condition: template
+          value_template: "{{ previous_light is not none and previous_room != current_room and previous_room is not none and previous_room not in ['unavailable', 'unknown'] }}"
+      then:
+        - service: switch.turn_off
+          target:
+            entity_id: "{{ previous_light }}"
+  mode: restart
+
+- alias: "청소 완료 후 거실 불 끄기"
+  description: "로봇 청소 작업 완료 시 거실 불을 끕니다."
+  trigger:
+    - platform: state
+      entity_id: sensor.l10s_pro_ultra_heat_task_status
+      to: "completed"
+  condition:
+    - condition: state
+      entity_id: sensor.hyo_pre
+      state: 'not_home'
+    - condition: state
+      entity_id: sensor.woo_pre
+      state: 'not_home'
+  action:
+    - service: switch.turn_off
+      target:
+        entity_id: 
+          - switch.0x00124b0024c0591e
+          - switch.my_room
+          - switch.desk_lamp
+
+- alias: "청소 완료"
+  trigger: 
+    - platform: time
+      at: "11:05:00"
+  action:
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.cleaned_today
+# - alias: heat
+#   mode: restart
+#   trigger:
+#     platform: state
+#     entity_id: sensor.l10s_pro_ultra_heat_drying_progress
+#     to: '100'
+#   action:
+#     - service: button.press
+#       entity_id: button.l10s_pro_ultra_heat_drying_stop

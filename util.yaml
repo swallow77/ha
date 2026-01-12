@@ -1,0 +1,14 @@
+energy_monthly:
+  source: sensor.0x00158d000736da72_energy
+  cycle: monthly
+  offset:
+    days: 2
+  net_consumption: true
+ 
+energy_day:
+  source: sensor.0x00158d000736da72_energy
+  cycle: daily  
+  
+# print_energy:
+  # source: sensor.smart_plug_power_energy
+  # cycle: daily   

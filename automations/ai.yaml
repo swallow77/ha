@@ -1,0 +1,284 @@
+- alias: Update AI Text with Weather
+  description: 날씨 센서 값들을 input_text.ai에 저장
+  id: update_ai_text_with_weather
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.dw1_village_precipitation_probability_0_0900
+        - sensor.dw1_village_precipitation_probability_0_1800
+        - sensor.dw1_village_temperature_0_0900
+        - sensor.dw1_village_temperature_0_1800
+        - sensor.dw1_village_humidity_0_0900
+        - sensor.dw1_village_humidity_0_1800
+        - sensor.dw1_village_wind_speed_0_0900
+        - sensor.dw1_village_wind_speed_0_1800
+        - sensor.dw1_village_sky_0_0900
+        - sensor.dw1_village_sky_0_1800
+        - sensor.comisemeonjideunggeub
+        - sensor.jaoeseondeunggeub
+  condition: []
+  action:
+    - service: input_text.set_value
+      target:
+        entity_id: input_text.ai
+      data:
+        value: >
+          9시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_0900') }} %,
+          18시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_1800') }} %,
+          9시 기온: {{ states('sensor.dw1_village_temperature_0_0900') }}도,
+          18시 기온: {{ states('sensor.dw1_village_temperature_0_1800') }}도,
+          9시 습도: {{ states('sensor.dw1_village_humidity_0_0900') }}%,,
+          18시 습도: {{ states('sensor.dw1_village_humidity_0_1800') }}%,,
+          9시 풍속: {{ states('sensor.dw1_village_wind_speed_0_0900') }}m/s,
+          18시 풍속: {{ states('sensor.dw1_village_wind_speed_0_1800') }}m/s,
+          9시 하늘상태: {{ states('sensor.dw1_village_sky_0_0900') }},
+          18시 하늘상태: {{ states('sensor.dw1_village_sky_0_1800') }},
+          초미세먼지: {{ states('sensor.comisemeonjideunggeub') }},
+          자외선: {{ states('sensor.jaoeseondeunggeub') }}
+  mode: single
+
+# - id: morning_outfit_tts
+#   alias: Morning Outfit TTS
+#   description: 날씨 정보로 옷차림을 추천하고 TTS로 안내합니다
+#   trigger:
+#     - platform: state
+#       entity_id: input_boolean.morrning
+#       to: 'on'
+#   condition:
+#     - condition: template
+#       value_template: "{{ trigger.to_state.state | length > 1 }}"
+#   action:
+#     # 1. 다른 자동화 우선 정지
+#     - service: automation.turn_off
+#       target:
+#         entity_id: automation.hwajangsileumag
+
+#     # 2. AI 서비스 호출
+#     - service: google_generative_ai_conversation.generate_content
+#       data:
+#         prompt: >-
+#           다음은 현재 날씨 정보입니다. 
+#           9시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_0900') }} %, 
+#           18시 강수확률: {{ states('sensor.dw1_village_precipitation_probability_0_1800') }} %, 
+#           9시 기온: {{ states('sensor.dw1_village_temperature_0_0900') }}도, 
+#           18시 기온: {{ states('sensor.dw1_village_temperature_0_1800') }}도, 
+#           9시 습도: {{ states('sensor.dw1_village_humidity_0_0900') }}%, 
+#           18시 습도: {{ states('sensor.dw1_village_humidity_0_1800') }}%, 
+#           9시 풍속: {{ states('sensor.dw1_village_wind_speed_0_0900') }}m/s, 
+#           18시 풍속: {{ states('sensor.dw1_village_wind_speed_0_1800') }}m/s, 
+#           9시 하늘상태: {{ states('sensor.dw1_village_sky_0_0900') }}, 
+#           18시 하늘상태: {{ states('sensor.dw1_village_sky_0_1800') }}, 
+#           초미세먼지: {{ states('sensor.comisemeonjideunggeub') }}, 
+#           자외선: {{ states('sensor.jaoeseondeunggeub') }}, 
+#           체감온도: {{ states('sensor.dw1_realtime_apparent_temperature') }}도 
+#           이 날씨 정보를 종합적으로 고려하여, 외출 시 가장 적절한 옷차림을 아주 자세하게 추천해주십시오. 1. 우산이나 선크림 같은 악세사리는 필요하면 답변해주고 필요없으면 답변하지 말아주세요. 2. 이 응답은 TTS로 음성 안내될 예정이므로, 텍스트에 별표(*), 이중 별표(**) 등 그 어떤 종류의 별표 문자도 절대로 포함해서는 안 됩니다. 또한, 다른 모든 특수문자 사용 및 'Celsius'와 같은 영문 단위 표시도 피해주세요. 모든 온도는 '도'로 표현해주세요. 3. 체감온도를 알려주시고, 추천옷차림을 부드럽고 친절한 말투로 답변 부탁드립니다.
+#       response_variable: ai_analysis_result
+#     - variables:
+#         tts_message: >-
+#           {% if ai_analysis_result is defined and ai_analysis_result.text is defined %}
+#             {{ ai_analysis_result.text }}
+#           {% else %}
+#             AI 응답을 처리하는데 실패했습니다. HACS 서비스나 응답 구조를 확인해주세요.
+#           {% endif %}
+#     - service: script.universal_notify
+#       data:
+#         message: "{{ tts_message }}"
+#         tts_target: media_player.jeonce2
+#         tts_service: tts.google_cloud_say
+#         tts_options:
+#           speed: 0.9
+#           pitch: -1.5
+#     - wait_for_trigger:
+#         - platform: state
+#           entity_id: media_player.jeonce2
+#           to:
+#             - 'idle'
+#             - 'off'
+#       timeout:
+#         minutes: 3
+#       continue_on_timeout: true
+#     - service: automation.turn_on
+#       target:
+#         entity_id: automation.hwajangsileumag
+# - id: analyze_ai_input_via_hacs_service_rv
+#   alias: Analyze input_text.ai via HACS Service (RV)
+#   description: input_text.ai 변경 시 HACS 서비스로 분석 후 결과 저장 (response_variable)
+#   trigger:
+#     - platform: state
+#       entity_id: input_boolean.morrning
+#       to: 'on'
+#   condition:
+#     - condition: template
+#       value_template: "{{ trigger.to_state.state | length > 1 }}"
+#   action:
+#     - service: google_generative_ai_conversation.generate_content
+#       data:
+#         prompt: "이 내용은 오늘 날씨정보야 이걸 분석해서 외출시 추천 복장을 255자 이하로 정리하고, 아주 자세히 추천해주세요, 답변엔 제시한 날씨정보는 절대로 답변하지 마세요, '*'제외,  tts 서비스로 방송 하기 쉽게 간단하게 '오늘 추천복장은' 하면서 부드럽고 친절한 말투로 답변 부탁드립니다.: {{ states('input_text.ai') }}"
+#       response_variable: ai_analysis_result
+#     - choose:
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ ai_analysis_result is defined and ai_analysis_result.text is defined }}"
+#           sequence:
+#             - service: input_text.set_value
+#               target:
+#                 entity_id: input_text.ai_value
+#               data:
+#                 value: "{{ ai_analysis_result.text }}"
+#       default:
+#         - service: input_text.set_value
+#           target:
+#             entity_id: input_text.ai_value
+#           data: 
+#             value: "AI 응답 처리 실패 (HACS 서비스 또는 응답 구조 확인 필요)"
+
+- id: family_schedule_outfit_recommendation
+  alias: Family Schedule Outfit Recommendation
+  description: 가족 일정(06-23시) 1시간 5분 전 날씨 기반 옷차림 추천
+  trigger:
+    - platform: template # 이것이 유일한 트리거가 됩니다.
+      value_template: >
+        {% set event_str = states('sensor.calendar_family') %}
+        {% set ns = namespace(trigger_now=false) %}
+        {# sensor.calendar_family의 상태가 유효한지 기본 검사 #}
+        {% if event_str and event_str not in ['unknown', 'unavailable'] and event_str | length > 12 %}
+          {% set month_s = event_str[0:2] %}
+          {% set day_s = event_str[3:5] %}
+          {% set hour_s = event_str[7:9] %}
+          {% set minute_s = event_str[10:12] %}
+
+          {# 추출된 문자열이 숫자인지 확인 #}
+          {% if month_s.isnumeric() and day_s.isnumeric() and hour_s.isnumeric() and minute_s.isnumeric() %}
+            {% set event_hour_int = hour_s | int %}
+
+            {# 이벤트 시간 범위 확인 (코드 기준 06:00 ~ 23:59) #}
+            {% if event_hour_int >= 6 and event_hour_int <= 23 %}
+              {% set current_year = now().year %}
+              {% set dt_current_year_str = current_year ~ '-' ~ month_s ~ '-' ~ day_s ~ ' ' ~ hour_s ~ ':' ~ minute_s ~ ':00' %}
+              
+              {# 문자열을 datetime 객체로 변환 (as_datetime 사용) #}
+              {% set parsed_event_dt_naive = dt_current_year_str | as_datetime %}
+              
+              {% if parsed_event_dt_naive is not none %}
+                {# 로컬 시간대로 가정하고 시간대 정보 추가 #}
+                {% set parsed_event_dt_local = parsed_event_dt_naive.replace(tzinfo=now().tzinfo) %}
+
+                {# 이벤트가 현재 시간 이후인지 확인 #}
+                {% if parsed_event_dt_local > now() %}
+                  {# --- 수정된 부분 시작 --- #}
+                  {% set trigger_target_dt = parsed_event_dt_local - timedelta(hours=1, minutes=5) %}
+                  {# --- 수정된 부분 끝 --- #}
+                  {# 현재 시간이 계산된 트리거 시간 이후이고, 트리거 시간+1분 이전일 때 (1분 동안의 창) #}
+                  {% if now() >= trigger_target_dt and now() < (trigger_target_dt + timedelta(minutes=1)) %}
+                    {% set ns.trigger_now = true %}
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+        {{ ns.trigger_now }}
+  condition:
+    # 자동화 전체에 적용될 조건이 있다면 여기에 추가합니다.
+    # 예: 특정 날씨 센서가 사용 가능한지 확인
+    - condition: template
+      value_template: >
+        {{ states('sensor.cegamondo') not in ['unknown', 'unavailable'] and
+           states('sensor.hyeonjaeondo') not in ['unknown', 'unavailable'] and
+           states('sensor.calendar_family') not in ['unknown', 'unavailable'] }}
+  action:
+    # 1. 프롬프트 미리 생성
+    - variables:
+        final_prompt: >-
+          {% set event_str = states('sensor.calendar_family') %}
+          {% set event_hour = event_str[7:9] %}
+          {% set event_minute = event_str[10:12] %}
+          {% set event_details = event_str[13:] | trim %}
+          {% set precipitation_prob = states('sensor.gangsuhwagryul') %}
+          {% set feels_like_temp = states('sensor.cegamondo') %}
+          {% set current_temp = states('sensor.hyeonjaeondo') %}
+          {% set current_humidity = states('sensor.hyeonjaeseubdo') %}
+          {% set current_wind_speed = states('sensor.hyeonjaepungsog') %}
+          {% set sky_condition = states('sensor.hyeonjaenalssi') %}
+          {% set ultrafine_dust = states('sensor.comisemeonjideunggeub') %}
+          {% set uv_index = states('sensor.jaoeseondeunggeub') %}
+          안녕하세요! 지금부터 약 1시간 5분 뒤인 {{ event_hour }}시 {{ event_minute }}분에 '{{ event_details }}' 약속이 예정되어 있습니다.
+          참고하실 현재 날씨 및 환경 정보는 다음과 같습니다:
+          - 현재 강수 확률: {{ precipitation_prob if precipitation_prob not in ['unknown', 'unavailable'] else '정보 없음' }}%
+          - 현재 체감 온도: {{ feels_like_temp if feels_like_temp not in ['unknown', 'unavailable'] else '정보 없음' }}도
+          - 현재 온도: {{ current_temp if current_temp not in ['unknown', 'unavailable'] else '정보 없음' }}도
+          - 현재 습도: {{ current_humidity if current_humidity not in ['unknown', 'unavailable'] else '정보 없음' }}%
+          - 현재 풍속: {{ current_wind_speed if current_wind_speed not in ['unknown', 'unavailable'] else '정보 없음' }}
+          - 현재 하늘 상태: {{ sky_condition if sky_condition not in ['unknown', 'unavailable'] else '정보 없음' }}
+          - 현재 초미세먼지 등급: {{ ultrafine_dust if ultrafine_dust not in ['unknown', 'unavailable'] else '정보 없음' }}
+          - 현재 자외선 등급: {{ uv_index if uv_index not in ['unknown', 'unavailable'] else '정보 없음' }}
+          - 체감온도: {{ states('sensor.dw1_realtime_apparent_temperature') }}도
+          이 약속의 내용과 위의 날씨 정보를 종합적으로 고려하여, 외출 시 가장 적절한 옷차림을 장소도 참고해서 아주 자세하게 추천해주십시오. 
+          1. 우산이나 선크림 같은 악세사리는 필요하면 답변해주고 필요없으면 답변하지 말아주세요
+          2. 이 응답은 TTS로 음성 안내될 예정이므로, 텍스트에 별표(*), 이중 별표(**) 등 그 어떤 종류의 별표 문자도 절대로 포함해서는 안 됩니다. 이건 매우중요합니다.
+          3. 다른 모든 특수문자 사용 및 'Celsius'와 같은 영문 단위 표시도 피해주세요. 모든 온도는 '도'로 표현해주세요.
+          4. 처음에 약속시간과 내용을 이야기하고 추천옷차림을 부드럽고 친절한 말투로 답변 부탁드립니다. 
+          5. 장소에 필요할만한 준비물 같은게 필요할것 같은것도 있으면 답변 부탁드립니다.
+  
+    # 2. API 호출 및 재생 대기
+    - alias: Retry Generation
+      repeat:
+        count: 3
+        sequence:
+          - service: google_generative_ai_conversation.generate_content
+            continue_on_error: true
+            data:
+              prompt: "{{ final_prompt }}"
+            response_variable: ai_outfit_recommendation
+          
+          # 성공 여부 확인
+          - if:
+              - condition: template
+                value_template: "{{ ai_outfit_recommendation is defined and ai_outfit_recommendation.text is defined }}"
+            then:
+              # 성공했으면 메시지 가공
+              - variables:
+                  processed_message: >
+                    {{ ai_outfit_recommendation.text 
+                       | replace('*', '') 
+                       | replace('\n', ' ') 
+                       | replace('  ', ' ')
+                       | trim }}
+              # TTS 실행 요청
+              - service: script.universal_notify
+                data:
+                  message: "{{ processed_message }}"
+                  tts_target: media_player.jeonce2
+                  tts_service: tts.google_cloud_say
+                  tts_options:
+                    speed: 0.9
+                    pitch: -1.5
+              
+              # ▼▼▼ [핵심 수정] 소리가 나올 때까지 넉넉하게 기다림 ▼▼▼
+              # 1. '재생 중' 상태가 될 때까지 최대 20초 대기 (서버 지연 고려)
+              - wait_template: "{{ is_state('media_player.jeonce2', 'playing') }}"
+                timeout: "00:00:20"
+                continue_on_timeout: true
+              
+              # 2. 재생이 시작되었으면, 끝날 때까지 대기 (최대 3분)
+              # 이렇게 해야 자동화가 '실행 중' 상태를 유지해서 화장실 센서가 끄지 않음
+              - wait_template: "{{ not is_state('media_player.jeonce2', 'playing') }}"
+                timeout: "00:03:00"
+              
+              # 3. 재생 종료 후 자동화 완료
+              - stop: "Success: TTS Finished"
+          
+          # 실패했다면 대기 후 재시도
+          - delay:
+              minutes: 1
+  
+    # 3. 3번 다 실패했을 경우 실행되는 실패 알림
+    - service: script.universal_notify
+      data:
+        message: "죄송합니다. 구글 서버 응답이 없어 옷차림 추천을 할 수 없습니다."
+        tts_target: media_player.jeonce2
+        tts_service: tts.google_cloud_say
+        tts_options:
+          speed: 0.9
+          pitch: -1.5
+

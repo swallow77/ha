@@ -1,0 +1,13 @@
+wifi_check:
+  name: wifi 재실
+  entities:
+    # - device_tracker.sm_g991n
+    - person.admin
+    # - person.ujin
+    # - device_tracker.galaxy_s21_5g
+    # - device_tracker.iphone_4
+    # - device_tracker.donghoon_shin
+    - person.hyojin_2
+    - person.ujin
+    # - sensor.woojin_tracker
+    # - sensor.hyojin_tracker

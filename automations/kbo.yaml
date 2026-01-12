@@ -1,0 +1,121 @@
+- alias: kbo daily precheck and set time
+  description: 매일 경기 정보를 확인하고 경기 시작 시간을 설정합니다 (시즌 기간에만)
+  id: kbo_daily_precheck_and_set_time
+  trigger:
+    - platform: time
+      at: "13:00:00"
+  condition:
+    - condition: template
+      value_template: "{{ now().weekday() != 0 }}"
+    - condition: template
+      value_template: >
+        {{ states('input_datetime.kbo_season_start_date') <= now().strftime('%Y-%m-%d') and
+          now().strftime('%Y-%m-%d') <= states('input_datetime.kbo_season_end_date') }}
+  action:
+    - service: shell_command.kbo_script
+    - delay: '00:00:10'
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.kbo_time
+      data:
+        time: >
+          {% set time_str = states('sensor.kbo_lg_game_start_time') %}
+          {% if ':' in time_str %}
+            {{ time_str + ':00' if time_str.count(':') == 1 else '00:00:00' }}
+          {% else %}
+            {{ '00:00:00' }}
+          {% endif %}
+  mode: single
+
+- alias: kbo start loop at gametime
+  description: 경기 시작 시간에 자동 확인을 시작합니다 (시즌 기간에만)
+  id: kbo_start_loop_at_gametime
+  trigger:
+    - platform: time
+      at: input_datetime.kbo_time
+  condition:
+    - condition: state
+      entity_id: input_boolean.kbo
+      state: 'off'
+    - condition: template
+      value_template: >
+        {% set current_state = states('sensor.kbo_lg_twins_status_mqtt') %}
+        {{ current_state not in ['오늘 LG 경기 없음', '경기 목록 없음', 'KBO 확인 오류', 'MQTT 연결 오류', 'unknown', 'unavailable'] }}
+    - condition: template
+      value_template: "{{ now().weekday() != 0 }}"
+    - condition: template
+      value_template: >
+        {{ states('input_datetime.kbo_season_start_date') <= now().strftime('%Y-%m-%d') and
+          now().strftime('%Y-%m-%d') <= states('input_datetime.kbo_season_end_date') }}
+  action:
+    - service: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.kbo
+  mode: single
+
+- alias: kbo run check every 3min
+  description: KBO 스위치가 켜져 있으면 3분마다 스크립트를 실행합니다 (시즌 기간에만)
+  id: kbo_run_check_every_3min
+  trigger:
+    - platform: time_pattern
+      minutes: /1
+  condition:
+    - condition: state
+      entity_id: input_boolean.kbo
+      state: 'on'
+    - condition: template
+      value_template: >
+        {{ states('input_datetime.kbo_season_start_date') <= now().strftime('%Y-%m-%d') and
+          now().strftime('%Y-%m-%d') <= states('input_datetime.kbo_season_end_date') }}
+  action:
+    - service: shell_command.kbo_script
+      data: {}
+  mode: single
+
+- alias: kbo stop loop on game end
+  description: 경기 종료 시 또는 밤 11시에 자동 확인을 중지합니다
+  id: kbo_stop_loop_on_game_end
+  trigger:
+    - platform: state
+      entity_id: sensor.kbo_lg_twins_status_mqtt
+      to:
+        - "경기종료"
+        - "취소"
+        - "오늘 LG 경기 없음"
+    - platform: time
+      at: "23:00:00"
+  condition:
+    - condition: state
+      entity_id: input_boolean.kbo
+      state: 'on'
+  action:
+    - service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.kbo
+  mode: single
+
+- alias: kbo notify on status change
+  description: 경기 상태 변경 시 TV로 알림을 전송합니다 (시즌 기간에만)
+  id: kbo_notify_on_status_change
+  trigger:
+    - platform: state
+      entity_id: sensor.kbo_lg_twins_status_mqtt
+  condition:
+    - condition: state
+      entity_id: media_player.lg_webos_smart_tv
+      state: 'on'
+    - condition: template
+      value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable', 'KBO 확인 오류', '경기 목록 없음', '오늘 LG 경기 없음'] }}"
+    - condition: template
+      value_template: >
+        {{ states('input_datetime.kbo_season_start_date') <= now().strftime('%Y-%m-%d') and
+          now().strftime('%Y-%m-%d') <= states('input_datetime.kbo_season_end_date') }}
+  action:
+  - service: script.universal_notify
+    data:
+      tts: false
+      tv_notify: true
+      push_target: mobile_app_sm_s921n
+      push_title: "LG 경기"
+      message: "⚾ {{ trigger.to_state.state }}"
+  mode: single

@@ -1,0 +1,283 @@
+- platform: naver_travel_time
+  name: traffice
+  client_id: ooh694qzie
+  api_key: SYlHHYqvRH5cZtTonNGTSmQm3JlBPZ7Hwq1govuw
+  origin: device_tracker.life360_donghun_sin
+  destination: zone.home
+
+- platform: mold_indicator
+  name: mold_room
+  indoor_temp_sensor: sensor.0x00158d0002b573e9_temperature
+  indoor_humidity_sensor: sensor.0x00158d0002b573e9_humidity
+  outdoor_temp_sensor: sensor.dw1_realtime_temperature
+  calibration_factor: 1.3
+  
+- platform: mold_indicator
+  name: mold_living
+  indoor_temp_sensor: sensor.living_1_temp
+  indoor_humidity_sensor: sensor.living_1_humi
+  outdoor_temp_sensor: sensor.dw1_realtime_temperature
+  calibration_factor: 1.3
+
+- platform: mold_indicator
+  name: mold_study
+  indoor_temp_sensor: sensor.0x00158d0002fb4710_temperature
+  indoor_humidity_sensor: sensor.0x00158d0002fb4710_humidity
+  outdoor_temp_sensor: sensor.dw1_realtime_temperature
+  calibration_factor: 1.5
+
+
+
+# - platform: airkorea
+  # name: airkorea
+  # service_key: 'bCMgbVQqDUf0q%2FAU1fXXLSrZJVR6Eg9WKMayUUU%2FULoSUHVqdfomimTgcuHbw695Q7hr0oxptmwirT6WfHF0%2BA%3D%3D'
+#  #  station_name: 신촌로
+  # station_name: 한강대로
+  # scan_interval: 900
+  # monitored_conditions:
+#  #    - data_time        # 측정시간
+#  #    - so2              # 아황산가스 
+#  #    - so2_grade        # 아황산가스 등급
+#  #    - co               # 일산화탄소 
+#  #    - co_grade         # 일산화탄소 등급
+    # - o3               # 오존
+    # - o3_grade          
+#  #    - no2
+#  #    - no2_grade
+    # - pm10
+#  #    - pm10_24h
+    # - pm10_grade
+    # - pm10_grade_1h
+    # - pm25
+#  #    - pm25_24h
+    # - pm25_grade
+    # - pm25_grade_1h
+    # - khai
+    # - khai_grade
+  
+- platform: time_date
+  display_options:
+    - 'time'
+    # - 'date'
+- platform: anniversary
+  tts_days: 3
+  sensors:
+    father_birthday:
+      name: '아부지 생신'
+      date: '1942-10-20'
+      type: 'birth'
+      lunar: true
+      intercalation: false
+    mom_birthday:
+      name: '엄마 생일'
+      date: '1951-07-19'
+      type: 'birth'
+      lunar: true
+      intercalation: false
+    hyo_birthday:
+      name: '효진 생일'
+      date: '2006-02-25'
+      type: 'birth'
+    woo_birthday:
+      name: '우진 생일'
+      date: '2008-01-06'
+      type: 'birth'
+    sea:
+      name: '바다'
+      date: '2019-08-22'
+      type: 'anniversary'
+    sea_d:
+      name: '바다기일'
+      date: '2023-01-24'
+      type: 'anniversary'
+    jin:
+      name: '정서방 생일'
+      date: '1973-04-09'
+      type: 'birth' 
+      lunar: true
+      intercalation: false
+    hee_birthday:
+      name: '유희 생일'
+      date: '1980-06-15'
+      type: 'birth'      
+    jaewoo:
+      name: '재우 생일'
+      date: '2019-04-02'
+      type: 'birth'
+    sunwoo:
+      name: '선우 생일'
+      date: '2016-01-26'
+      type: 'birth'  
+
+
+- platform: history_stats
+  name: tv_time
+  entity_id: media_player.lg_webos_smart_tv
+  state: 'on'
+  type: time
+  start: "{{ as_timestamp(today_at('00:00')) }}"
+  end: "{{ as_timestamp(now()) }}"
+- platform: history_stats
+  name: woo_pc_time
+  entity_id: switch.woo_computer
+  state: 'on'
+  type: time
+  start: "{{ as_timestamp(today_at('00:00')) }}"
+  end: "{{ as_timestamp(now()) }}" 
+- platform: history_stats
+  name: pc_time
+  entity_id: switch.computer
+  state: 'on'
+  type: time
+  start: "{{ as_timestamp(today_at('00:00')) }}"
+  end: "{{ as_timestamp(now()) }}"
+- platform: history_stats
+  name: 유희외출
+  entity_id: sensor.hee_tracker2
+  state: "not_home"
+  type: time
+  start: "{{ now().replace(hour=0, minute=0, second=0) }}"
+  end: "{{ now() }}"   
+# - platform: email
+  # email: !secret email
+  # password: delxizabwdelrdle
+ 
+# - platform: seoul_bus
+#   api_key: 'bCMgbVQqDUf0q%2FAU1fXXLSrZJVR6Eg9WKMayUUU%2FULoSUHVqdfomimTgcuHbw695Q7hr0oxptmwirT6WfHF0%2BA%3D%3D'
+#   # api_issued_date: '2017-09-05'
+#   view_type: 'M'
+#   stations:
+#     # - station_id: '03147'
+#       # name: '길건너'
+#       # exclude_buses:
+#         # - bus_id: '100100522'        
+#       # update_time:
+#         # - start_time: '09:00'
+#           # end_time: '23:00'
+#     - station_id: '03146'
+#       name: '집앞'
+#       update_time:
+#         - start_time: '08:00'
+#           end_time: '23:00'
+#       include_buses:
+#         - bus_id: '100100447'          
+#     - station_id: '03183'
+#       name: '효창공원'
+#       update_time:
+#         - start_time: '08:00'
+#           end_time: '23:00'
+#       exclude_buses:
+#         - bus_id: '102900004'             
+#     # - station_id: '03190'
+#       # name: '해밀턴'
+#       # update_time:
+#         # - start_time: '21:40'
+#           # end_time: '22:00'
+#       # include_buses:
+#         # - bus_id: '100100237'
+#       # exclude_buses:
+#         # - bus_id: '100100237'           
+        
+#     # - station_id: '03190'
+#       # name: '크라운호텔'
+#       # update_time:
+#         # - start_time: '21:40'
+#           # end_time: '22:00'
+#       # include_buses:
+#         # - bus_id: '100100237'
+#       # exclude_buses:
+#         # - bus_id: '100100237'              
+        
+
+
+# - platform: google_geocode
+#   name: 유희 위치
+#   origin: person.yuhyi_2
+#   api_key: AIzaSyCxpUX4D8XvIK8nrziPGBA4j9pasyoTsSM
+#   language: ko-KR
+#   region: KR
+#   options: street
+#  options: city, street, street_number
+# - platform: google_geocode
+  # origin:device_tracker.life360_sinrang
+  # api_key: AIzaSyCZHZas1eMlJMx8Fa68o8tZkG73BTm-OYs
+  # language: ko-KR
+  # region: KR  
+# - platform: google_geocode
+#   name: 아빠 위치
+#   origin: person.admin
+#   api_key: AIzaSyCxpUX4D8XvIK8nrziPGBA4j9pasyoTsSM
+#   language: ko-KR
+#   region: KR  
+#   options: street  
+# - platform: google_geocode
+#   name: 효진 위치
+#   origin: person.hyojin_2
+#   api_key: AIzaSyCxpUX4D8XvIK8nrziPGBA4j9pasyoTsSM
+#   language: ko-KR
+#   region: KR 
+#   options: street  
+# - platform: google_geocode
+#   origin: person.ujin
+#   name: 우진 위치
+#   api_key: AIzaSyCxpUX4D8XvIK8nrziPGBA4j9pasyoTsSM
+#   language: ko-KR
+#   region: KR 
+#   options: street  
+# - platform: google_geocode
+#   name: 엄마 위치
+#   origin: person.halmeoni
+#   api_key: AIzaSyCxpUX4D8XvIK8nrziPGBA4j9pasyoTsSM
+#   language: ko-KR
+#   region: KR  
+#   options: street  
+  
+# - platform: naver_weather
+  # name: naver_weather
+  # area: '서울시+용산구+원효로3가+날씨'
+  
+# - platform: local_weather_rss
+#   localcode: 1117056000
+
+- platform: average
+  name: 'heart_av'
+  duration:
+    days: 1  
+  entities: 
+    - sensor.amazfit_heartrate
+
+- platform: average
+  name: 'heart_st'
+  duration:
+    days: 1  
+  entities: 
+    - sensor.amazfit_stress
+- platform: average
+  name: 'spo2_av'
+  duration:
+    days: 1  
+  entities: 
+    - sensor.spo2
+
+- platform: mqtt_room
+  device_id: "iBeacon:a576a36f-b137-46bd-a985-7c9a3317153d-100-40004" # Android 기기
+  name: "Hoon_irk"
+  state_topic: "espresense/devices/iBeacon:a576a36f-b137-46bd-a985-7c9a3317153d-100-40004"
+  timeout: 10 # 여러개의 ESPresense가 있을 때 timeout 이내의 시간 중 가장 가까운 신호값을 기록함(초)
+  away_timeout: 180 # 외출로 판단하는 시간(초)  
+
+- platform: mqtt_room
+  device_id: "iBeacon:973d2179-4194-4ad1-a9b6-2f00fbee043f-100-40004" # Android 기기
+  name: "Hyo_pre"
+  state_topic: "espresense/devices/iBeacon:973d2179-4194-4ad1-a9b6-2f00fbee043f-100-40004"
+  timeout: 10 # 여러개의 ESPresense가 있을 때 timeout 이내의 시간 중 가장 가까운 신호값을 기록함(초)
+  away_timeout: 240 # 외출로 판단하는 시간(초)
+
+- platform: mqtt_room
+  device_id: "phone:woo-pre" # Android 기기
+  name: "woo_pre"
+  state_topic: "espresense/devices/phone:woo-pre"
+  timeout: 10 # 여러개의 ESPresense가 있을 때 timeout 이내의 시간 중 가장 가까운 신호값을 기록함(초)
+  away_timeout: 180 # 외출로 판단하는 시간(초)
+
+

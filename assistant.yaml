@@ -1,0 +1,231 @@
+project_id: homeassistant-a1f2c
+service_account: !include homeassistant-a1f2c-bb98cbcc644b.json
+report_state: true
+exposed_domains:
+  # - light
+  # - switch
+  # - fan
+  # - script
+  # - cover
+  - climate
+
+entity_config:
+  switch.my_room:
+    name: 내방 전등
+    expose: true
+  switch.desk_lamp:
+    name: 효진방 전등
+    expose: true
+  switch.room2_light:
+    name: 화장실 전등
+    expose: true
+  cover.am43_1:
+    name: 커튼
+    expose: true
+  camera.out_dome:
+    name: 실외 카메라
+    expose: true
+  # script.livingroom_air_quality:
+    # name: 거실상태
+    # expose: true
+  # script.all_out:
+    # name: 전체외출
+    # expose: no
+  # script.hyo_loaction:
+    # name: 효진 위치
+    # expose: true
+  # script.woo_loaction:
+    # name: 우진 위치
+    # expose: true
+  # script.hee_loaction:
+    # name: 유희 위치
+    # expose: true
+  # script.choi_loaction:
+    # name: 할머니 위치
+    # expose: true      
+  # script.auto_cleaner:
+    # expose: true
+    # name: 청소기
+  # script.cctv_view:
+    # expose: true
+    # name: CCTV 
+  # script.black_fan:
+    # expose: true
+    # name: 내방 선풍기 꺼
+  # script.black_fan_up:
+    # expose: true
+    # name: 내방 선풍기 켜
+  # script.car_detect:
+    # expose: true
+    # name: 주차확인
+  # script.song_mode:
+    # expose: true
+    # name: 음악모드
+  # script.higher:
+    # expose: true
+    # name: 현재키    
+  # script.livingroom_clean:
+    # expose: true
+    # name: 거실청소
+  # script.livingroom2_clean:
+    # expose: true
+    # name: 거실2청소
+  # script.bedroom_clean:
+    # expose: true
+    # name: 침실청소
+  # script.studyroom_clean:
+    # expose: true
+    # name: 효진방청소
+    
+
+  # automation.8_briefing:
+    # expose: no
+  # script.tv_mode:
+    # expose: no       
+  # script.air_bad:
+    # expose: no
+  # script.air_dry:
+    # expose: no     
+  # script.air_normal:
+    # expose: no
+  # script.air_wet:
+    # expose: no
+  # script.co2:
+    # expose: no
+  # script.daddy_home:
+    # expose: no
+  # script.daddy_work_out:
+    # expose: no
+  # script.door_bell_s:
+    # expose: no
+  # script.door_open:
+    # expose: no
+  # script.fire_alram:
+    # expose: no
+  # script.hee_home:
+    # expose: no
+  # script.hee_out:
+    # expose: no
+  # script.hyojin_home:
+    # expose: no   
+  # script.hyojin_school:
+    # expose: no       
+  # script.hyojin_study_in:
+    # expose: no    
+  # script.hyojin_study_out:
+    # expose: no     
+  # script.laundry_end:
+    # expose: no
+  # script.message:
+    # expose: no
+  # script.mold_living:
+    # expose: no     
+  # script.mold_room:
+    # expose: no
+  # script.mom_hee_out:
+    # expose: no
+  # script.mom_home:
+    # expose: no
+  # script.mom_out:
+    # expose: no
+  # script.now_rain:
+    # expose: no
+  # script.rainning:
+    # expose: no
+  # script.study_time:
+    # expose: no
+  # script.woojin_home:
+    # expose: no
+  # script.woojin_school:
+    # expose: no
+  # script.woojin_study:
+    # expose: no
+  # script.woojin_study_in:
+    # expose: no
+  # script.8briefing:
+    # expose: no    
+          
+  # script.co2_red:
+    # expose: no       
+  # script.morrning_tts:
+    # expose: no   
+  # script.o3:
+    # expose: no   
+  # script.play_sel_sound:
+    # expose: no      
+  # script.play_sel_sound_loop:
+    # expose: no   
+  # script.home:
+    # expose: no
+  # script.mold_study:
+    # expose: no      
+  # script.rain_morrning_tts:
+    # expose: no      
+  # script.temp_30:
+    # expose: no      
+  # script.xiaomi_mude:
+    # expose: no 
+  # script.dtt3500_power:
+    # expose: no     
+  # script.toilet_s:
+    # expose: no 
+  # script.toilet_b:
+    # expose: no     
+  # switch.ledbar_blue:
+    # expose: no
+  # switch.ledbar_green:
+    # expose: no    
+  # switch.ledbar_puple:
+    # expose: no    
+  # switch.ledbar_red:
+    # expose: no    
+  # switch.ledbar_white:
+    # expose: no    
+  # switch.ledbar_yellow:
+    # expose: no    
+
+  # switch.ledbar_music:
+    # expose: no
+  # switch.ledbar_orange:
+    # expose: no
+  # switch.ledbar_cyan:
+    # expose: no
+  # light.fastled_ws2811_light:
+    # expose: no    
+  # light.ili9341_display_backlight:
+    # expose: no 
+      
+  # script.welcome_day:
+    # expose: no    
+  # script.welcome_night:
+    # expose: no    
+  # script.woojin_suwon:
+    # expose: no    
+  # script.call:
+    # expose: no
+  # script.deli:
+    # expose: no  
+  # script.deli_end:
+    # expose: no        
+  # script.trace:
+    # expose: no        
+  # switch.adaptive_lighting_adapt_brightness_jubang:
+    # expose: no   
+  # switch.adaptive_lighting_adapt_color_jubang:
+    # expose: no   
+  # switch.adaptive_lighting_sleep_mode_jubang:
+    # expose: no   
+  # switch.circadian_lighting_circadian_lighting:
+    # expose: no 
+  # script.7016_bus:
+    # name: 신촌버스
+    # expose: true
+  # script.shower:
+    # name: 샤워모드
+    # expose: true
+  # script.tv_off:
+    # name: tv_off
+    # expose: no
+  # automation.bus_time:
+    # name: 7016버스
+    # expose: true       

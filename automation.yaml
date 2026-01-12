@@ -1,0 +1,521 @@
+- alias: GH vol 60%
+  id: GH_vol_60%
+  initial_state: true
+  trigger:
+    - platform: time
+      at: 
+        - '07:00:01'
+        - '23:00:01'
+        - '14:00:01'
+        - '08:40:00'
+  action:
+    - service: media_player.volume_set
+      entity_id:
+        - media_player.jeonce
+        - media_player.gajogsil
+        - media_player.geosil
+        - media_player.maegseu
+        - media_player.nesthub4076
+        - media_player.jeonce
+      data:
+        volume_level: >
+          {% if now().hour >= 7 and now().hour < 22 %}
+            0.3
+          {% else %}
+            0.4
+          {% endif %}
+
+- alias: "일일 초기화"
+  trigger:
+    - platform: time
+      at: 
+        - "00:00:00"
+        - "01:00:00"
+  action:
+    - service: >
+        {% if now().hour == 0 %}
+        counter.reset
+        {% else %}
+        homeassistant.turn_off
+        {% endif %}
+      target:
+        entity_id: >
+          {% if now().hour == 0 %}
+          counter.human
+          {% else %}
+          input_boolean.cleaned_today,
+          media_player.lenovosmartdisplay106451
+          {% endif %}
+    - if:
+        - condition: template
+          value_template: "{{ now().hour == 1 }}"
+      then:
+        - service: homeassistant.turn_on
+          target:
+            entity_id: automation.pyeongil_acim_alram
+        - service: input_number.set_value
+          target:
+            entity_id: input_number.trace
+          data:
+            value: 0
+  
+- alias: laundry_state
+  id: laundry_state
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.setaggi_run_state
+    to: '세탁 완료'
+  action:
+    - service: switch.turn_off
+      entity_id: switch.setaggi_power
+    - service: script.universal_notify
+      data:
+        message: "세탁기가 끝났습니다. 빨래를 확인해주세요"
+        push_target: noti_all
+
+- alias: 리모컨 변환
+  id: 리모컨_변환
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.tv_active_1
+  action:
+    - service: remote.turn_on
+      entity_id: remote.living
+      data_template:
+        activity: >
+          {% set state = states('sensor.tv_active_1') %}
+          {% if state == 'off' %}PowerOff
+          {% elif state == 'Olleh TV' %}nomal-i
+          {% elif state in ['YouTube', 'Netflix', 'Watch TV', 'wavve', 'Chrome', 'TVING'] %}nomal
+          {% elif state == 'onkyo' %}mi
+          {% elif state == 'Genie TV 셋톱박스' %}nomal-i
+          {% else %}nomal{% endif %}
+    - service: mqtt.publish
+      data_template:
+        topic: "home/sensors/remote"
+        payload: >
+          {% set state = states('sensor.tv_active_1') %}
+          {% if state == 'PowerOff' %}off
+          {% elif state == 'Watch TV' %}TV
+          {% elif state == 'onkyo' %}MI
+          {% elif state == 'android' %}Onkyo
+          {% elif state == 'Olleh TV' %}IPTV
+          {% elif state == 'Netflix' %}Netflix
+          {% elif state == 'YouTube' %}YouTube
+          {% elif state == 'wavve' %}Wavve
+          {% elif state == 'chrome' %}Chrome
+          {% elif state == 'watcha' %}Watcha
+          {% elif state == 'TVING' %}TVING
+          {% else %}closed{% endif %}
+        retain: true
+
+- alias: computer_usb
+  id: computer_usb
+  initial_state: true
+  description: 컴퓨터 전원 상태에 따라 주변기기(USB, 프린터) 동기화
+  trigger:
+    - platform: state
+      entity_id: switch.computer
+      to:
+        - 'on'
+        - 'off'
+  action:
+    - service: "switch.turn_{{ trigger.to_state.state }}"
+      target:
+        entity_id:
+          - switch.usb
+          - switch.print
+
+- alias: all_out
+  id: all_out
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: group.wifi_check
+      to: 'not_home'
+      for:
+        minutes: 10
+  condition:
+    - condition: state
+      entity_id: sensor.hoon_irk
+      state: 'not_home'
+    - condition: template
+      value_template: "{{ not states('sensor.sm_s936n_wi_fi_connection') in ['swallow', 'swallow_5g'] }}"   
+  action:
+    - service: script.turn_on
+      entity_id: script.all_out
+    - service: notify.noti_all
+      data: 
+        title: '*집 비움*'
+        message: 집에 아무도 없습니다. 
+        data: 
+          priority: high            
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.welcome  
+      
+- alias: welcome
+  id: welcome
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id:  binary_sensor.0xa4c13821150cf1b8_contact
+      from: 'off'
+      to: 'on'
+  conditions: 
+    - condition: state
+      entity_id: input_boolean.welcome
+      state: 'on'
+  action:
+    - service: homeassistant.turn_on
+      entity_id:
+        - light.co3_airlight
+        - light.ili9341_display_backlight
+        - switch.0x00124b0024c0591e
+    - service: script.turn_on
+      entity_id: script.welcome
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.welcome      
+
+- alias: "공기청정기 선택"
+  id: "공기청정기_선택"
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_select.air
+  action:    
+    service: fan.set_preset_mode
+    entity_id: fan.zhimi_m1_3538_air_purifier
+    data_template:
+      preset_mode: "{% if is_state('input_select.air','자동') %}Auto
+                    {% elif is_state('input_select.air','슬립') %}Silent
+                    {% elif is_state('input_select.air','최대') %}Favorite
+                    {% endif %}"
+              
+- alias: auto_light_combined
+  id: auto_light_combined
+  description: 주방 재실 및 조도에 따른 조명 자동 제어
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.0x187a3efffe3359fe_presence
+        - binary_sensor.0x00158d0000d4b7aa_occupancy
+        - binary_sensor.0x00158d000313985a_occupancy
+      to: 
+        - 'on'
+        - 'off'
+  variables:
+    # 3개의 센서 중 하나라도 감지되면 '재실'로 판단
+    is_occupied: >
+      {{ is_state('binary_sensor.0x00158d0000d4b7aa_occupancy', 'on') or
+        is_state('binary_sensor.0x187a3efffe3359fe_presence', 'on') or
+        is_state('binary_sensor.0x00158d000313985a_occupancy', 'on') }}
+    is_dark: "{{ states('sensor.0x04cf8cdf3c787547_illuminance') | float(0) < 10 }}"
+    is_home: "{{ is_state('group.wifi_check', 'home') }}"
+  action:
+    - choose:
+        # 1. 켜기 조건: 재실 + 어두움 + 꺼짐 + 재실모드
+        - conditions:
+            - "{{ is_occupied }}"
+            - "{{ is_dark }}"
+            - "{{ is_state('light.jubang', 'off') }}"
+            - "{{ is_home }}"
+          sequence:
+            - service: homeassistant.turn_on
+              target:
+                entity_id:
+                  - switch.adaptive_lighting_jubang
+                  - switch.adaptive_lighting_adapt_brightness_jubang
+                  - switch.adaptive_lighting_adapt_color_jubang
+                  - light.jubang
+                  - switch.spot_led_power
+                  - light.ili9341_display_backlight
+        # 2. 끄기 조건: 비재실 (모든 센서 off)
+        - conditions:
+            - "{{ not is_occupied }}"
+          sequence:
+            - service: homeassistant.turn_off
+              target:
+                entity_id:
+                  - light.jubang
+                  - switch.spot_led_power
+                  - light.ili9341_display_backlight
+        # 3. 디스플레이 켜기: 재실 + 홈 (밝기 무관하게 재실시 유지)
+        - conditions:
+            - "{{ is_occupied }}"
+            - "{{ is_home }}"
+          sequence:
+            - service: homeassistant.turn_on
+              target:
+                entity_id: light.ili9341_display_backlight
+
+- alias: 정시알림
+  id: 정시알림
+  description: 정시에 시간, 가족 위치, 날씨, 공기질 정보를 TV로 알림
+  initial_state: true
+  trigger:
+    - platform: time_pattern
+      minutes: '00'
+      seconds: '00'
+  condition:
+    - condition: and
+      conditions:
+        - condition: time
+          after: '08:00:00'
+          before: '23:00:00'
+        - condition: state
+          entity_id: group.wifi_check
+          state: 'home'
+  action:
+    - service: tts.google_cloud_say
+      target:
+        entity_id: media_player.jeonce
+      data:
+        message: >-
+          {{ now().strftime('%p %-I시') | replace("AM", "오전") | replace("PM", "오후") }}
+    - variables:
+        msg_family: >-
+          {%- if states('device_tracker.life360_donghun_sin') != 'home' -%} 아빠 {{ states('device_tracker.life360_donghun_sin') }} / {%- endif -%}
+          {%- if states('sensor.choi') != '엄마집' -%}할머니({{ states('sensor.choi') }}) {%- endif -%}
+          {%- if states('sensor.hyojin') != 'Home' -%}ㅤ효진({{ states('sensor.hyojin') }}) {%- endif -%}
+          {%- if states('sensor.woojin') != 'Home' -%}ㅤ우진({{ states('sensor.woojin') }}) {%- endif -%}
+          {%- if states('sensor.yuhyi') != '유희집' -%}ㅤ유희({{ states('sensor.yuhyi') }}) {%- endif -%}
+        msg_weather: >-
+          {{ states('sensor.hyeonjaenalssijeongbo') }}/체감온도 {{ states('sensor.dw1_realtime_apparent_temperature') }}°C/거실 {{ states('sensor.co3_living_temp') }}°C/효진방 {{ states('sensor.0x00158d0000fa2832_temperature') }}°C
+        msg_air_internal: >-
+          [거실공기 {{ states('sensor.zhimi_m1_3538_pm25_density') }}㎍/m³] / 안방공기: [{{ states('sensor.bme680_co2_equivalent') }}㎍/m³] / 이산화탄소: [{{ states('sensor.co2') }}PPM]
+        msg_air_external: >-
+          초미세먼지:{{ states('sensor.dw1_airkorea_pm25_grade') }}/미세먼지:{{ states('sensor.dw1_airkorea_pm10_grade') }}/오존:{{ states('sensor.dw1_airkorea_o3_grade') }}
+    - parallel:
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ states('media_player.lg_webos_smart_tv') not in ['off', 'unavailable'] }}"
+              sequence:
+                - service: script.notify_lg_tv_safe
+                  data:
+                    message: "{{ msg_family }}"
+                - delay: '00:00:05'
+                - service: script.notify_lg_tv_safe
+                  data:
+                    message: "{{ msg_weather }}"
+                - delay: '00:00:05'
+                - service: script.notify_lg_tv_safe
+                  data:
+                    message: "{{ msg_air_internal }}"
+                - delay: '00:00:05'
+                - service: script.notify_lg_tv_safe
+                  data:
+                    message: "{{ msg_air_external }}"
+        - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('media_player.smarttv_4k') not in ['off', 'unavailable', 'unknown', 'standby'] }}"
+            sequence:
+              - service: script.notify_android_tv_safe
+                data:
+                  message: "{{ msg_family }}"
+
+- alias: tv_time
+  id: tv_time
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.tv_time_h
+  action:
+    - service: mqtt.publish
+      data_template:
+        topic: "home/sensors/tv_time"
+        payload: '{{trigger.to_state.state}}'
+        retain: true
+  
+- alias: dish_off
+  id: dish_off
+  trigger:
+    platform: time
+    at: '02:00:00'
+  action:
+    - service: switch.turn_off
+      entity_id: switch.0x00124b001b78df4c
+      
+- alias: security_alarm_response_combined
+  id: security_alarm_response_combined
+  description: 모바일 앱 알림 액션에 따른 보안 모드 설정/해제 (통합)
+  initial_state: true
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: trigger_1
+      id: arm_away
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: trigger_2
+      id: disarm
+  action:
+    - choose:
+        - conditions: "{{ trigger.id == 'arm_away' }}"
+          sequence:
+            - action: alarm_control_panel.alarm_arm_away
+              target:
+                entity_id: alarm_control_panel.lumi_gateway_v3_alarm
+        - conditions: "{{ trigger.id == 'disarm' }}"
+          sequence:
+            - action: alarm_control_panel.alarm_disarm
+              target:
+                entity_id: alarm_control_panel.lumi_gateway_v3_alarm
+  
+- alias: 3d_printer
+  id: 3d_printer
+  initial_state: true
+  trigger:
+    - platform: template
+      value_template: "{{ states('sensor.octoprint_job_percentage') | float(0) == 100 }}"
+  action:
+    - service: script.universal_notify
+      data:
+        message: "3d 프린터가 끝났습니다."
+        push_target: noti_all
+    - service: switch.turn_off
+      entity_id: switch.3d_peurinteo
+    - delay: 00:10:00
+    - service: switch.turn_off
+      entity_id: switch.3d_peurinteo_usb
+
+- alias: "문 열림 카운터 증가"
+  id: "문_열림_카운터_증가"
+  trigger:
+    platform: state
+    entity_id: binary_sensor.0x00158d000165ff42_occupancy
+    to: 'on'
+  action:
+    service: counter.increment
+    target:
+      entity_id: counter.human    
+      
+- alias: 플스 켜기
+  id: 플스_켜기
+  trigger:
+    - platform: state
+      entity_id: switch.0xa4c1389d84bc9056
+      from: 'off'
+      to: 'on'
+  action:
+    - choose:
+        # TV가 꺼져있으면 켜고 대기
+        - conditions: "{{ is_state('media_player.lg_webos_smart_tv', 'off') }}"
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.tv
+            - delay: 6
+    # TV가 켜져있든 꺼져있든(위에서 켰으므로) 소스 변경 수행
+    - service: media_player.select_source
+      data:
+        source: "PS5 게임 콘솔"
+      target:
+        entity_id: media_player.lg_webos_smart_tv
+
+- alias: TV Source Light Control
+  id: TV_Source_Light_Control
+  description: TV 소스가 Infini Pro일 때 조명 켜기/끄기
+  trigger:
+    - platform: state
+      entity_id: media_player.lg_webos_smart_tv
+      attribute: source
+  condition: []
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.to_state.attributes.source == 'Infini Pro' }}"
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: light.tv_light_tv_light
+      default:
+        - service: light.turn_off
+          target:
+            entity_id: light.tv_light_tv_light
+  mode: single
+
+- alias: Motion detected message script
+  description: 모션 감지 시 메시지 스크립트 실행
+  initial_state: false
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.0x00158d0000d4b7aa_occupancy
+      to: 'on'
+  condition: []
+  action:
+    - service: script.message
+    - service: homeassistant.turn_off
+      entity_id: automation.motion_detected_message_script
+
+
+- id: 'queued_tts_executor_automation'
+  alias: Queued TTS Executor Automation
+  description: 'queued_tts_request 이벤트를 받아 실제로 TTS를 재생하고 완료까지 대기합니다.'
+  initial_state: true
+  # mode: single은 한 번에 하나의 TTS만 처리하도록 보장하여, 큐와 같은 역할을 합니다.
+  mode: single
+  trigger:
+    - platform: event
+      event_type: queued_tts_request
+  
+  # action이 시작될 때, trigger에서 받은 모든 정보를 변수로 먼저 정의합니다.
+  variables:
+    entity_id: "{{ trigger.event.data.entity_id }}"
+    message: "{{ trigger.event.data.message }}"
+    tts_service: "{{ trigger.event.data.tts_service | default('tts.microsoft_say') }}"
+    options: "{{ trigger.event.data.options if trigger.event.data.options is mapping else {} }}"
+
+  action:
+    # ▼▼▼ 디버깅을 위한 로그 기록 추가 ▼▼▼
+    - service: system_log.write
+      data:
+        level: info
+        message: "TTS 실행 시작: entity_id={{ entity_id }}, message={{ message }}"
+
+    # 이제부터는 위에서 정의한 변수를 안전하게 사용할 수 있습니다.
+    - choose:
+        - conditions:
+            - "{{ tts_service == 'tts.google_cloud_say' }}"
+          sequence:
+            - service: tts.google_cloud_say
+              target:
+                entity_id: "{{ entity_id }}"
+              data:
+                message: "{{ message }}"
+                options: "{{ options }}"
+      # 기본 서비스는 edge_tts_say 입니다.
+      default:
+        - service: tts.microsoft_say
+          target:
+            entity_id: "{{ entity_id }}"
+          data:
+            message: "{{ message }}"
+            options: "{{ options }}"
+
+    - service: system_log.write
+      data:
+        level: info
+        message: "TTS 서비스 호출 완료: {{ tts_service }}. 재생 완료를 기다립니다."
+        
+    - delay:
+        seconds: 1 # 미디어 플레이어가 'playing' 상태로 변경될 시간을 줍니다.
+    
+    # ▼▼▼ 대기 로직 수정 ▼▼▼
+    # is_state(entity_id, 'idle') 대신 not is_state(entity_id, 'playing')을 사용하여
+    # 'paused'와 같은 다른 상태에도 대응하도록 개선합니다.
+    - wait_template: "{{ not is_state(entity_id, 'playing') }}"
+      timeout: '00:02:00'
+      continue_on_timeout: true
+
+    - service: system_log.write
+      data:
+        level: info
+        message: "TTS 실행 완료: {{ entity_id }} 재생이 끝났습니다."
+

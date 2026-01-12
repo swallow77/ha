@@ -1,0 +1,392 @@
+- alias: 화장실 미디어 플레이어 볼륨 자동 조절
+  trigger:
+    - platform: time
+      at: '21:00:00'
+    - platform: time
+      at: '07:00:00'
+  action:
+    - service: media_player.volume_set
+      target:
+        entity_id: 
+          - media_player.hwajangsil_2
+      data:
+        volume_level: >
+          {% if now().hour >= 21 or now().hour < 7 %}
+            0.3
+          {% else %}
+            0.4
+          {% endif %}
+
+- alias: toilet_set_occupancy_by_counter_simple_func_like
+  description: 카운터 센서 상태에 따라 재실 상태 즉시 설정 및 정리 (간단 함수형)
+  trigger:
+    - platform: state
+      entity_id: number.0x00158d000736d8a2_people
+  action:
+    - choose:
+        - conditions:
+            - condition: numeric_state
+              entity_id: number.0x00158d000736d8a2_people
+              above: 0
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.toilet_in
+      default:
+        - service: input_boolean.turn_off
+          target:
+            entity_id: input_boolean.toilet_in
+
+- id: toilet_sync_and_media_optimized
+  alias: Toilet Sync and Media Optimized
+  description: 5초 주기, TTS 스크립트 실행 중이 아닐 때만 미디어 종료
+  mode: restart
+  trigger:
+    - platform: time_pattern
+      seconds: "/5"
+  condition:
+    - condition: state
+      entity_id: input_boolean.toilet_s
+      state: 'off'
+  action:
+    - choose:
+        # 1. 사람이 없을 때 (OFF)
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.0xa4c138e71ac20ced_presence
+              state: 'off'
+          sequence:
+            - if:
+                - condition: state
+                  entity_id: light.fastled_ws2811_light
+                  state: 'on'
+              then:
+                - service: light.turn_off
+                  target:
+                    entity_id: light.fastled_ws2811_light
+            - if:
+                - condition: state
+                  entity_id: input_boolean.toilet_in
+                  state: 'on'
+              then:
+                - service: input_boolean.turn_off
+                  target:
+                    entity_id: input_boolean.toilet_in
+            
+            # ▼▼▼ 수정된 부분 ▼▼▼
+            - if:
+                - condition: state
+                  entity_id: media_player.hwajangsil_2
+                  state: 'playing'
+                
+                # 보호 조건 1: 기존 아침 루틴 스크립트가 꺼져 있을 때
+                - condition: state
+                  entity_id: script.morning_outfit_tts
+                  state: 'off'
+                
+                # 보호 조건 2: (추가됨) TTS 알림 스크립트가 꺼져 있을 때
+                # 새로 만든 자동화가 이 스크립트를 통해 말을 합니다.
+                - condition: state
+                  entity_id: script.universal_notify
+                  state: 'off'
+                  
+                # 보호 조건 3: (추가됨) 옷차림 추천 자동화 자체가 실행 중(생성 중 등)이 아닐 때
+                # current 속성이 0이면 실행 중이 아님을 의미합니다.
+                - condition: numeric_state
+                  entity_id: automation.family_schedule_outfit_recommendation
+                  attribute: current
+                  below: 1
+
+              then:
+                - service: media_player.media_stop
+                  target:
+                    entity_id: media_player.hwajangsil_2
+            # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+        # 2. 사람이 있을 때 (ON)
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.0xa4c138e71ac20ced_presence
+              state: 'on'
+            - condition: state
+              entity_id: input_boolean.toilet_in
+              state: 'off'
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.toilet_in
+# - id: toilet_media_sync
+#   alias: Toilet Media Sync
+#   description: 5초 주기, 부재 시 미디어 제어 최적화
+#   mode: restart
+#   trigger:
+#     - platform: time_pattern
+#       seconds: "/5"
+#   condition:
+#     - condition: state
+#       entity_id: input_boolean.toilet_s
+#       state: 'off'
+#   action:
+#     - choose:
+#         - conditions:
+#             - condition: state
+#               entity_id: binary_sensor.0xa4c138e71ac20ced_presence
+#               state: 'off'
+#           sequence:
+#             - if:
+#                 - condition: state
+#                   entity_id: light.fastled_ws2811_light
+#                   state: 'on'
+#               then:
+#                 - service: light.turn_off
+#                   target:
+#                     entity_id: light.fastled_ws2811_light
+#             - if:
+#                 - condition: state
+#                   entity_id: input_boolean.toilet_in
+#                   state: 'on'
+#               then:
+#                 - service: input_boolean.turn_off
+#                   target:
+#                     entity_id: input_boolean.toilet_in
+#             - if:
+#                 - condition: state
+#                   entity_id: media_player.hwajangsil_2
+#                   state: 'playing'
+#                 - condition: template
+#                   value_template: >-
+#                     {{ state_attr('media_player.hwajangsil_2', 'media_content_id') is not none 
+#                     and 
+#                     not ('/api/tts_proxy/' in state_attr('media_player.hwajangsil_2', 'media_content_id') or 
+#                          '/api/tts_get_url?' in state_attr('media_player.hwajangsil_2', 'media_content_id'))
+#                     and
+#                     (state_attr('script.morning_outfit_tts', 'last_triggered') is none or 
+#                      (now() - state_attr('script.morning_outfit_tts', 'last_triggered')).total_seconds() > 180) }}
+#               then:
+#                 - service: media_player.media_stop
+#                   target:
+#                     entity_id: media_player.hwajangsil_2
+#         - conditions:
+#             - condition: state
+#               entity_id: binary_sensor.0xa4c138e71ac20ced_presence
+#               state: 'on'
+#             - condition: state
+#               entity_id: input_boolean.toilet_in
+#               state: 'off'
+#           sequence:
+#             - service: input_boolean.turn_on
+#               target:
+#                 entity_id: input_boolean.toilet_in
+
+- alias: 소변
+  initial_state: true
+  mode: restart    
+  trigger: 
+    platform: numeric_state
+    entity_id: sensor.toilet_distance
+    below: 0.70
+    for:
+      seconds: 15
+  action:
+    - service: input_boolean.turn_on
+      entity_id: 
+        - input_boolean.toilet_in
+        - input_boolean.toilet_s
+    # - service: automation.turn_off
+      # entity_id: automation.toilet_counter_up_error_check
+    - service: light.turn_on
+      entity_id: light.fastled_ws2811_light
+      data:
+        effect: "Color Wipe"
+    - service: number.set_value
+      entity_id: number.0x00158d000736d8a2_people
+      data:
+        value: '1'
+
+- alias: 소변_off
+  initial_state: true
+  mode: restart
+  trigger: 
+    platform: numeric_state
+    entity_id: sensor.toilet_distance
+    above: 0.85
+    for:
+      seconds: 2
+  condition:
+    condition: state
+    entity_id: 
+      - input_boolean.toilet_s
+    state: 'on'
+  action:
+    - service: homeassistant.turn_off
+      entity_id: 
+        - light.fastled_ws2811_light
+        - input_boolean.toilet_s        
+    - service: light.turn_on
+      data:
+        entity_id: light.fastled_ws2811_light
+        brightness: 255
+        xy_color: [0.434, 0.501]        
+
+- id: toilet_occupancy_control
+  alias: Toilet Occupancy Control
+  description: 화장실 재실 상태에 따라 조명/음악을 제어하고 TTS 재생은 보호합니다.
+  initial_state: true
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: input_boolean.toilet_in
+  action:
+    - choose:
+        # 조건: 화장실에 들어갔을 때 (on)
+        - conditions:
+            - condition: state
+              entity_id: input_boolean.toilet_in
+              state: 'on'
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: light.fastled_ws2811_light
+              data:
+                brightness: 255
+                xy_color: [0.161, 0.189]
+            - service: music_assistant.play_media
+              target:
+                entity_id: media_player.hwajangsil_2
+              data:
+                media_type: playlist
+                media_id: 500 Random tracks (from library)
+        # 조건: 화장실에서 나왔을 때 (off)
+        - conditions:
+            - condition: state
+              entity_id: input_boolean.toilet_in
+              state: 'off'
+          sequence:
+            # 만약 재생중인 것이 TTS가 아니라면, 미디어 플레이어를 끈다.
+            - if:
+                - condition: template
+                  value_template: >-
+                    {{ state_attr('media_player.hwajangsil_2', 'media_content_id') is not none and
+                       not state_attr('media_player.hwajangsil_2', 'media_content_id').startswith('/api/tts_proxy/') }}
+              then:
+                - service: media_player.turn_off
+                  target:
+                    entity_id: media_player.hwajangsil_2
+            - service: number.set_value
+              target:
+                entity_id: number.0x00158d000736d8a2_people
+              data:
+                value: '0'
+            - service: homeassistant.turn_off
+              target:
+                entity_id:
+                  - light.fastled_ws2811_light
+                  - input_boolean.toilet_in
+                  - light.smart_plug_light_1
+                  - light.smart_plug_light_3
+#                  - switch.room2_light
+
+- alias: 물내림
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: input_boolean.toilet_s
+    from: 'on'
+    to: 'off'
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: >-
+                {% if trigger.from_state is not none and trigger.to_state is not none %}
+                  {{ (as_timestamp(trigger.to_state.last_changed, 0) - as_timestamp(trigger.from_state.last_changed, 0)) > 120 }}
+                {% else %}
+                  false
+                {% endif %}
+          sequence:
+            - service: script.turn_on
+              target:
+                entity_id: script.toilet_b
+      default:
+        - service: script.turn_on
+          target:
+            entity_id: script.toilet_s
+    - delay: '00:00:05'
+    - service: switch.turn_on
+      target:
+        entity_id: switch.fresh
+      
+- alias: 화장실 환기
+  initial_state: true
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.0x00158d0000fa2832_humidity
+        - number.0x00158d000736d8a2_people
+  action:
+    - choose:
+        # 사람이 화장실에 들어오면 환풍기를 켠다
+        - conditions:
+            - condition: numeric_state
+              entity_id: number.0x00158d000736d8a2_people
+              above: 0
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.0x00124b0024c05975
+        # 습도가 70% 이상이면 환풍기를 켠다
+        - conditions:
+            - condition: template
+              value_template: "{{ states('sensor.0x00158d0000fa2832_humidity') | float(0) >= 70 }}"
+          sequence:
+            - service: switch.turn_on
+              entity_id: switch.0x00124b0024c05975
+        # 사람이 없으면 5분 대기 후 습도를 확인하여 환풍기 제어
+        - conditions:
+            - condition: numeric_state
+              entity_id: number.0x00158d000736d8a2_people
+              below: 1
+          sequence:
+            - delay: '00:05:00'
+            - if:
+                - condition: template
+                  value_template: "{{ states('sensor.0x00158d0000fa2832_humidity') | float(0) >= 70 }}"
+              then:
+                - service: switch.turn_on
+                  entity_id: switch.0x00124b0024c05975
+              else:
+                - service: switch.turn_off
+                  entity_id: switch.0x00124b0024c05975
+
+- alias: Set Radar by Washer
+  description: 세탁기 상태에 따라 레이더 감도 조절 (템플릿)
+  trigger:
+    - platform: state
+      entity_id: switch.setaggi_power
+      to:
+        - 'on'
+        - 'off'
+  action:
+    - service: number.set_value
+      target:
+        entity_id: number.0xa4c138e71ac20ced_radar_sensitivity
+      data:
+        value: >
+          {% if trigger.to_state.state == 'on' %}
+            5
+          {% else %}
+            6
+          {% endif %}
+
+- alias: toilet_matter_switch
+  initial_state: true
+  mode: single
+  description: 화장실 매터 스위치
+  trigger:
+    - platform: state
+      entity_id: light.smart_plug_light_3
+  action:
+    - service: >
+        light.turn_{{ 'on' if trigger.to_state.state == 'on' else 'off' }}
+      target:
+        entity_id: light.smart_plug_light_1

@@ -1,0 +1,41 @@
+#- platform: generic_thermostat
+#  name: living_control
+## heater: 에어컨 온 / 오프용 스위치
+#  heater: script.aircon_auto
+## target_sensor: 온도 체크용 센서명
+#  target_sensor: sensor.temperature_158d0000f19a70
+## ac_mode: 에어컨으로 동작할거라서 true 로 입력, 히터로 동작시 삭제하면 됨
+#  ac_mode: True
+## min_temp: 온도 설정시 조절 가능한 최소온도
+#  min_temp: 18
+## max_temp: 온도 설정시 조절 가능한 최대온도
+#  max_temp: 30
+## target_temp: 기본 설정시(HA재시작등) 지정된 온도 기준값
+#  target_temp: 26
+## cold_tolerance: 현재온도 = 목표온도- 현설정값이 되면 히터/에어컨 동작을 결정함.
+##                       히터 모드일 경우, 설정온도가 25 / cold_tolerance 가 2 라면 25-2=23도 이하가 현재온도일때 히터켬
+##                       에어컨 모드일 경우, 설정온도가 25 / cold_tolerance 가 2 라면 25-2=23도 이하가 현재온도일때 에어컨 끔
+#  cold_tolerance: 2
+## hot_tolerance: colde_tolorance 와 반대개념, 현재온도 = 목표온도+hot_tolorance 설정값일 경우 히터 / 에어컨 동작을 결정
+#  hot_tolerance: 0
+## min_cycle_duration: 현재 온도가 얼마 이상 유지되어야 동작됨(정확하지 않음..)
+#  min_cycle_duration:
+#    seconds: 5
+## keep_alive: 설정된 시간마다 트리거됨(현재 온도와 설정온도 차이를 비교하여 on,off 신호 전달)
+##             에어컨이 켜져있거나 / 꺼져있거나 상관 없이 climate가 활성화 되어 있으면 
+##             무조건 신호를 보냄
+##             (에어컨에서 신호 수신시 신호음이 울리면, 주기적으로 소리가 남...비추옵션)
+#  keep_alive:
+#    minutes: 3
+## initial_operation_mode: HA재시작 등으로 다시 로드될때의 기본 설정값 지정
+#  initial_operation_mode: "off"
+## away_temp: away 모드 적용시의 기본 온도 설정값 적용(heater 로 동작시킨다면, 15도 정도로 설정하여 동파방지 등..)
+#  away_temp: 30
+## precision: 측정 온도의 정밀도, 섭씨의 경우 기본설정값은 0.5도(0.1 / 0.5 / 1.0 설정가능)
+#  precision: 1.0
+
+# - platform: miheater
+  # host: 192.168.0.112
+  # token: 0eb1b1cf06a6dd0050dee8cf25d41222
+  # name: heater
+  # model: zhimi.heater.za2

@@ -1,0 +1,63 @@
+morrning:
+  name: 아침인사
+  initial: off
+morrning2:
+  name: 아침인사2
+  initial: off 
+# aircon_sleep:
+ # name: 에어컨 수면
+ # initial: off
+welcome:
+  name: 환영인사
+  initial: off
+laundry:
+  name: 세탁기
+  initial: off
+wifi_tracker:
+  name: 와이파이 재실
+  initial: off
+mute_gateway_sounds:
+  name: 경비
+  icon: mdi:shield-account
+toilet:
+  name: 변기
+  icon: mdi:toilet
+  initial: off  
+toilet_s:
+  name: 소변
+  icon: mdi:toilet
+toilet_b:
+  name: 큰거
+  icon: mdi:toilet  
+rain:
+  name: 비
+  initial: off    
+co2:
+  name: Co2
+toilet_in:
+  name: 화장실 재실
+  initial: off
+food:
+  name: 음식
+  initial: off 
+auto_light:
+  name: 거실자동
+# volume_backup:
+  # name: volume_backup
+  # icon: mdi:volume_medium
+  # min: 0
+  # max: 1
+  # step: 0.01  
+toilet_in_m:
+  name: 화장실 모션
+# toilet_check:  
+woo_com:
+  name: 우진컴퓨터
+cleaned_today:
+  name: cleaned_today
+  initial: off
+alram:
+  name: 기상
+kbo:
+  name: KBO
+  icon: mdi:baseball-bat

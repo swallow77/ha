@@ -1,0 +1,247 @@
+- alias : scale_check
+  id: scale_check
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.weight
+  action:
+    service: notify.mobile_app_sm_s936n
+    data:
+      message: 몸무게 측정     
+      title: 몸무게 측정
+      data: 
+        priority: high      
+
+- alias: 심박
+  description : 심박
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: device_tracker.fsrkb_bt_001
+      to: 'home'
+    - platform: state
+      entity_id: binary_sensor.heart_press
+      to: 'on'
+  action:
+    - service: notify.mobile_app_sm_s936n
+      data:
+        title: 혈압을 측정합니다
+        message: 혈압을 측정합다
+        data: 
+          priority: high 
+
+- alias: sleep_time
+  description : 수면시간
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id: sensor.r_sleep_time
+  action:
+    - service: script.universal_notify
+      data:
+        message: "오늘 수면은 총 {{ states('sensor.r_sleep_time') }}입니다."
+  # - alias: 체중
+    # initial_state: true
+    # description : 체중    
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_weight
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_weight"
+         # payload: "{{ states('sensor.donghoon_weight') }}"
+         # retain: true
+  # - alias: 지방
+    # initial_state: true
+    # description : 지방
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_body_fat
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_fat"
+         # payload: "{{ states('sensor.donghoon_body_fat') }}"
+         # retain: true 
+  # - alias: 근육양
+    # initial_state: true
+    # description : 근육양    
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_muscle_mass
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_muscle"
+         # payload: "{{ states('sensor.donghoon_muscle_mass') }}"
+         # retain: true  
+  # - alias: 내장지방
+    # initial_state: true
+    # description : 내장지방    
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_visceral_fat
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_fat2"
+         # payload: "{{ states('sensor.donghoon_visceral_fat') }}"
+         # retain: true  
+  # - alias: 수분
+    # initial_state: true
+    # description : 수분    
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_water
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_water"
+         # payload: "{{ states('sensor.donghoon_water') }}"
+         # retain: true
+  # - alias: 단백질
+    # initial_state: true
+    # description : 단백질
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_protein
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_protein"
+         # payload: "{{ states('sensor.donghoon_protein') }}"
+         # retain: true 
+  # - alias: 신체나이
+    # initial_state: true
+    # description : 신체나이
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_metabolic_age
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_age"
+         # payload: "{{ states('sensor.donghoon_metabolic_age') }}"
+         # retain: true
+  # - alias: 골밀도
+    # initial_state: true
+    # description : 골밀도
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_bone_mass
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_bone"
+         # payload: "{{ states('sensor.donghoon_bone_mass') }}"
+         # retain: true     
+  # - alias: bmi
+    # initial_state: true
+    # description : BMI
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_bmi
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_bmi"
+         # payload: "{{ states('sensor.donghoon_bmi') }}"
+         # retain: true   
+  # - alias: point
+    # initial_state: true
+    # description : 신체점수
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_body_score
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_score"
+         # payload: "{{ states('sensor.donghoon_body_score') }}"
+         # retain: true
+  # - alias: 기초대사율
+    # initial_state: true
+    # description : 신체점수
+    # trigger:
+      # platform: state
+      # entity_id: sensor.donghoon_basal_metabolism
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_basic"
+         # payload: "{{ states('sensor.donghoon_basal_metabolism') }}"
+         # retain: true                
+  # - alias: 걸음
+    # initial_state: true
+    # description : 걸음
+    # trigger:
+      # platform: state
+      # entity_id: sensor.amazfit_steps
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_step"
+         # payload: "{{ states('sensor.amazfit_steps') }}"
+         # retain: true     
+  # - alias: 기상
+    # initial_state: true
+    # description : 기상
+    # trigger:
+      # platform: state
+      # entity_id: sensor.amazfit_trigger_3
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_wake"
+         # payload: "{{ states('sensor.amazfit_trigger_3') }}"
+         # retain: true 
+  # - alias: 수면
+    # initial_state: true
+    # description : 수면
+    # trigger:
+      # platform: state
+      # entity_id: sensor.r_sleep_time
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_sleep"
+         # payload: "{{ states('sensor.r_sleep_time') }}"
+         # retain: true
+         
+  # - alias: 스트레스
+    # initial_state: true
+    # description : 스트레스
+    # trigger:
+      # platform: state
+      # entity_id: sensor.amazfit_stress
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_stress"
+         # payload: "{{ states('sensor.amazfit_stress') }}"
+         # retain: true 
+  # - alias: 잠든
+    # initial_state: true
+    # description : 잠든시간
+    # trigger:
+      # platform: state
+      # entity_id: sensor.asleep_time
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_asleep"
+         # payload: "{{ states('sensor.asleep_time') }}"
+         # retain: true
+  # - alias: 잠든
+    # initial_state: true
+    # description : 잠든시간
+    # trigger:
+      # platform: state
+      # entity_id: sensor.amazfit_spo2
+    # action:
+     # - service: mqtt.publish
+       # data_template:
+         # topic: "health/hoon_spo2"
+         # payload: "{{ states('sensor.amazfit_spo2') }}"
+         # retain: true   

@@ -1,0 +1,10 @@
+*
+!.gitignore
+!*.yaml
+!automations/
+
+
+secrets.yaml
+image_processing.yaml
+secrets.yaml
+image_processing.yaml

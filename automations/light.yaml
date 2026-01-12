@@ -1,0 +1,168 @@
+- alias: woojin light
+  description: 우진 공부방 센서 상태 및 시간에 따라 조명 제어 (23시 자동 소등 추가)
+  id: woojin light
+  initial_state: true
+  variables:
+    light_entity: light.showcase
+  trigger:
+    - platform: state
+      entity_id: sensor.woo_pre
+      to: "study_pre"
+      id: 'presence_on' # 트리거 ID 추가
+    - platform: state
+      entity_id: sensor.woo_pre
+      not_to: "study_pre"
+      for:
+        minutes: 2
+      id: 'presence_off' # 트리거 ID 추가
+    - platform: time
+      at: "07:20:00"
+      id: 'time_on_morning' # 트리거 ID 추가
+    - platform: time # 23시 끄기 트리거 추가
+      at: "23:00:00"
+      id: 'time_off_night' # 트리거 ID 추가
+  condition:
+    - condition: template
+      value_template: >
+        {# 23시 끄기 트리거는 항상 조건을 통과시킴 #}
+        {% if trigger.id == 'time_off_night' %}
+          true
+        {# 다른 트리거들은 기존 조건 로직 적용 #}
+        {% else %}
+          {% set is_weekday = is_state('binary_sensor.workday_sensor', 'on') %}
+          {% set is_vacation = is_state('sensor.vacation_mode', 'on') %}
+          {# 아침 켜기 트리거 조건 #}
+          {% if trigger.id == 'time_on_morning' %}
+            {{ is_weekday and not is_vacation }}
+          {# 상태(presence) 트리거 조건 #}
+          {% elif trigger.platform == 'state' %}
+            {% set hour = now().hour %}
+            {% if (hour >= 11 and hour < 23) and (is_vacation or not is_weekday) %}
+              true
+            {% elif hour >= 7 and hour < 23 and is_weekday and not is_vacation %}
+              true
+            {% else %}
+              false
+            {% endif %}
+          {# 예외 처리 (기본값 false) #}
+          {% else %}
+            false
+          {% endif %}
+        {% endif %}
+  action:
+    - choose:
+        # 아침 7시 20분 켜기
+        - conditions:
+            - condition: trigger
+              id: 'time_on_morning'
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: "{{ light_entity }}"
+        # 밤 11시 끄기
+        - conditions:
+            - condition: trigger
+              id: 'time_off_night'
+          sequence:
+            - service: light.turn_off
+              target:
+                entity_id: "{{ light_entity }}"
+        # 센서 상태 변경 시 (켜거나 끄기)
+        - conditions:
+            - condition: trigger
+              id:
+                - 'presence_on'
+                - 'presence_off'
+          sequence:
+            # 센서의 현재 상태를 기준으로 켜거나 끔
+            - service: "light.turn_{{ 'on' if is_state('sensor.woo_pre', 'study_pre') else 'off' }}"
+              target:
+                entity_id: "{{ light_entity }}"
+                
+- alias: 공부방 공기 LED
+  id: study_air_light
+  initial_state: true
+  trigger:
+    - platform: time
+      at: "07:00:00"
+    - platform: time
+      at: "22:00:00"
+  condition: []
+  action:
+    - service: "light.turn_{{ 'on' if trigger.platform == 'time' and trigger.now.hour == 7 else 'off' }}"
+      target:
+        entity_id: light.study_air_light
+
+- alias: bed_mode
+  id: bed_mode
+  initial_state: true
+  trigger:
+    - platform: time
+      at: '07:00:00'
+  condition:
+    - condition: template
+      value_template: >-
+        {{ states('binary_sensor.workday_sensor') == 'on' and
+          (states('sensor.hyo_vacation_mode') == 'off' and
+          states('person.hyojin_2') == 'home') }}
+  action:
+    - service: light.turn_on
+      entity_id: light.controller_rgb_64527a
+    - delay: '00:30:00'
+    - service: light.turn_off
+      entity_id: light.controller_rgb_64527a  
+
+- alias: Frame auto control
+  description: 지정된 시간(07:00-23:30) 및 재실 상태(켜짐:계산, 꺼짐:Zone)에 따라 액자 제어
+  id: frame_auto_control
+  trigger:
+    - platform: state
+      entity_id: input_boolean.morrning
+      from: "on"
+      to: "off"
+      id: "morning_off"
+    # [켜짐 트리거] 3개 센서 중 2명 이상이 집에 있을 때 (Template Trigger)
+    - platform: template
+      value_template: >
+        {{ [states('sensor.hyo_pre'), states('sensor.woo_pre'), states('sensor.hoon_irk')] 
+           | reject('eq', 'not_home') | list | count >= 2 }}
+      id: "presence_on"
+    # [꺼짐 트리거] zone.home 숫자가 2 미만으로 떨어질 때 (Numeric State)
+    - platform: numeric_state
+      entity_id: zone.home
+      below: 2
+      id: "zone_low"
+    - platform: time
+      at: "23:30:00"
+      id: "turn_off_time"
+  action:
+    - choose:
+        # 1. 끄는 동작 (시간 종료 or zone.home 인원 감소)
+        - conditions:
+            - condition: trigger
+              id:
+                - "turn_off_time"
+                - "zone_low"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id: switch.0x70b3d52b60044b7a
+        # 2. 켜는 동작 (2명 이상 감지 or 아침모드 해제)
+        - conditions:
+            - condition: time
+              after: "07:00:00"
+              before: "23:30:00"
+            - condition: trigger
+              id:
+                - "morning_off"
+                - "presence_on"
+            # 모닝모드 해제 시에도 재실 인원이 2명 이상인지 확인하기 위한 안전장치
+            - condition: template
+              value_template: >
+                {{ [states('sensor.hyo_pre'), states('sensor.woo_pre'), states('sensor.hoon_irk')] 
+                   | reject('eq', 'not_home') | list | count >= 2 }}
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: switch.0x70b3d52b60044b7a
+

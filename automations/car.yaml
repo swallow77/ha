@@ -1,0 +1,354 @@
+- alias: car_parking
+  id: car_parking
+  initial_state: false
+  trigger:
+    - platform: state
+      entity_id: sensor.in_dome_car_count
+  action:
+    - if:
+      - condition: numeric_state
+        entity_id: sensor.in_dome_car_count
+        above: 0
+        # for:
+          # minutes: 1
+      then:  
+        - service: camera.snapshot
+          data:
+            entity_id: camera.in_dome
+            filename: '/media/local/snap/paking.jpg'                 
+        - service: telegram_bot.send_message
+          data:
+            config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+            title: '주차 상태'
+            message: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+            data:
+              photo:
+                file: /media/local/snap/paking.jpg
+              data: 
+                priority: high  
+        - service: notify.mobile_app_sm_s936n
+          data_template:
+            title: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+            message: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"   
+        - service: telegram_bot.send_message
+          data:
+            config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+            title: '주차 상태'
+            message: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+            data:
+              photo:
+                file: '/media/local/snap/paking.jpg' 
+              data: 
+                priority: high    
+        - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+        - service: tts.microsoft_say
+          entity_id: media_player.jeonce
+          data:
+            message: "차량이 들어왔습니다."
+        - service: notify.noti_house
+          data:
+            message: "차량이 들어왔습니다."          
+      else:
+        - service: notify.mobile_app_sm_s936n
+          data_template:
+            title: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+            message: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"   
+        - service: telegram_bot.send_message
+          data:
+            config_entry_id: 01JZ82RH4PPMS8PNJR75BJ50XC
+            title: '주차 상태'
+            message: >
+              "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+            data:
+              photo:
+                file: '/media/local/snap/paking.jpg'                               
+        - service: media_player.turn_off
+          entity_id: media_player.hwajangsil  
+        - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "        
+        - service: tts.microsoft_say
+          entity_id: media_player.jeonce
+          data:
+            message: "차량이 나갔습니다."
+        - service: notify.noti_house
+          data:
+            message: "차량이 나갔습니다."  
+
+
+    
+- alias: 차량알림
+  id: '차량알림'
+  initial_state: false
+  trigger:
+    - platform: template
+      value_template: "{{ states('sensor.in_dome_car_count') | float(0) >= 0 }}"
+  action:
+    - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.in_dome_car_count
+            above: 0
+        sequence:
+          - service: notify.mobile_app_sm_s936n
+            data_template:
+              title: "현재 차량이 있습니다"
+              data: 
+                priority: high
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.in_dome_car_count
+            below: 1
+        sequence:
+          - service: notify.mobile_app_sm_s936n
+            data_template:
+              title: "현재 차량이 없습니다"
+              data: 
+                priority: high
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: camera.play_stream
+      data_template:
+        entity_id: camera.in_dome
+        media_player: media_player.maegseu    
+        
+  # - alias: car_in
+    # initial_state: true
+    # trigger:
+      # - platform: state
+        # entity_id: sensor.car_detect
+        # from: "Out"
+        # to: "In"
+    # action:
+      # - service: media_player.turn_off
+        # entity_id: media_player.hwajangsil  
+      # - delay: 00:00:05          
+      # - service: notify.telegram
+        # data_template:
+          # title: '주차 상태'
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # data:
+            # photo:
+              # file: /config/www/rekognition/rekognition_192_168_0_38_latest.jpg
+      # - service: notify.mobile_app_sm_s936n
+        # data_template:
+          # title: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"   
+      # - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data:
+          # message: "차량이 들어왔습니다."
+      # - service: notify.noti_house
+        # data:
+          # message: "차량이 들어왔습니다."
+       
+
+  # - alias: car_out
+    # initial_state: true
+    # trigger:
+      # - platform: state
+        # entity_id: sensor.car_detect
+        # from: "In"
+        # to: "Out"
+    # action:
+      # - delay: 00:00:05          
+      # - service: notify.telegram
+        # data_template:
+          # title: '주차 상태'
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # data:
+            # photo:
+              # file: /config/www/rekognition/rekognition_192_168_0_38_latest.jpg
+      # - service: notify.mobile_app_sm_s936n
+        # data_template:
+          # title: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"   
+      # - service: media_player.turn_off
+        # entity_id: media_player.hwajangsil  
+      # - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "        
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data:
+          # message: "차량이 나갔습니다."
+      # - service: notify.noti_house
+        # data:
+          # message: "차량이 나갔습니다."
+
+
+  # - alias: 베터리체크
+    # initial_state: true
+    # trigger:
+      # - platform: numeric_state
+        # entity_id: sensor.0xa4c1384739d6238e_battery
+        # below: 10
+    # action:
+      # - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data:
+          # message: "차량감지 센서 밧데리가 부족합니다. 확인해주세요"
+      # - service: notify.noti_all
+        # data:
+          # message: "차량감지 센서 밧데리가 부족합니다. 확인해주세요"              
+          # data: 
+            # priority: high
+          
+          
+    # initial_state: true
+    # trigger:
+      # - platform: numeric_state
+        # entity_id: sensor.in_dome_car_count
+    # action:
+      # - service: media_player.turn_off
+        # entity_id: media_player.hwajangsil  
+      # - service: notify.telegram
+        # data_template:
+          # title: '주차 상태'
+          # message: >
+            # "{{ states.sensor.in_dome_car_count.state | replace("0", "차량 없음") | replace("1", "차량 있음") | replace("2", "차량 있음")}}"
+          # data:
+            # photo:
+              # file: /config/www/rekognition/rekognition_192_168_0_38_latest.jpg
+      # - service: notify.mobile_app_sm_s936n
+        # data_template:
+          # title: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"   
+      # - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data:
+          # message: "차량이 들어왔습니다."
+      # - service: notify.noti_house
+        # data:
+          # message: "차량이 들어왔습니다."
+       
+
+  # - alias: car_out
+    # initial_state: true
+    # trigger:
+      # - platform: state
+        # entity_id: sensor.car_detect
+        # from: "In"
+        # to: "Out"
+    # action:
+      # - delay: 00:00:05          
+      # - service: notify.telegram
+        # data_template:
+          # title: '주차 상태'
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # data:
+            # photo:
+              # file: /config/www/rekognition/rekognition_192_168_0_38_latest.jpg
+      # - service: notify.mobile_app_sm_s936n
+        # data_template:
+          # title: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"
+          # message: >
+            # "{{ states.sensor.car_detect.state | replace("Out", "차량 없음") | replace("In", "차량 있음") | replace("Unknown", "?? 미확인 ??")}}"   
+      # - service: media_player.turn_off
+        # entity_id: media_player.hwajangsil  
+      # - wait_template:  "{{ is_state('media_player.jeonce', 'off') or is_state('media_player.jeonce', 'idle')}} "        
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data:
+          # message: "차량이 나갔습니다."
+      # - service: notify.noti_house
+        # data:
+          # message: "차량이 나갔습니다."
+          
+  # - alias: car_crash
+    # initial_state: true
+    # trigger:
+      # - platform: state
+        # entity_id: binary_sensor.0xa4c1384739d6238e_vibration
+        # from: 'off'
+        # to: 'on'
+    # condition:
+      # condition: and
+      # conditions:
+        # - condition: state
+          # entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+          # state: 'off'       
+    # action:
+      # - service: notify.noti_all
+        # data:
+          # message: "차량의 충격이 있습니다. 확인해주세요"
+      # - service: tts.microsoft_say
+        # entity_id: media_player.jeonce
+        # data_template:
+          # message: "차량의 충격이 있습니다. 확인해주세요"
+      # - service: camera.snapshot
+        # data:
+          # entity_id: camera.r4_f
+          # filename: '/config/www/snap/paking.jpg'
+      # - service: camera.snapshot
+        # data:
+          # entity_id: camera.in_dome
+          # filename: '/config/www/snap/paking1.jpg' 
+      # - service: camera.snapshot
+        # data:
+          # entity_id: camera.out_dome
+          # filename: '/config/www/snap/paking2.jpg' 
+      # - service: notify.telegram
+        # data:
+          # title: '차량 충격'
+          # message: "차량충격"
+          # data:
+            # photo:
+              # - file: /config/www/snap/paking.jpg
+              # - file: /config/www/snap/paking1.jpg 
+      # - service: camera.play_stream
+        # data:
+          # entity_id:  camera.r4_ffmpeg
+          # media_player: media_player.maegseu          
+      # - service: camera.record
+        # target:
+          # entity_id: camera.r4_ffmpeg
+        # data:
+          # filename: '/config/www/snap/car.mp4'
+          # duration: 20           
+      # - delay: 00:00:25              
+      # - service: notify.telegram
+        # data:
+          # title: '차량충격'
+          # message: "차량충격"
+          # data:
+            # video:
+              # file: /config/www/snap/car.mp4
+           
+
+  # - alias: rain_car
+    # initial_state: true
+    # mode: restart
+    # trigger:
+      # platform: state
+      # entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+    # action:
+      # - service_template: "{% if (states('binary_sensor.0x00158d00042ddb77_water_leak')) == 'off' %}automation.turn_on
+                           # {% elif (states('binary_sensor.0x00158d00042ddb77_water_leak')) == 'on' %}automation.turn_off
+                           # {% endif %}"
+        # entity_id: automation.car_crash
+    # action:
+      # - if:
+        # - condition: state
+          # entity_id: binary_sensor.0x00158d00042ddb77_water_leak
+          # state: 'on'
+        # then:
+          # - service: automation.turn_off
+            # entity_id: automation.car_crash
+        # else:
+          # - service: automation.turn_on
+            # entity_id: automation.car_crash

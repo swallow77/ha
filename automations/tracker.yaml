@@ -1,0 +1,434 @@
+- alias: daddy tracker
+  id: daddy_tracker
+  trigger:
+    platform: state
+    entity_id: device_tracker.life360_donghun_sin
+  variables:
+    locations: ['school', 'mapo', 'study', 'hee', 'sport', 'friend', 'depat', 'helseujang', 'hyojinalba', 'byeongweon']
+  condition:
+    - condition: template
+      value_template: >
+        {% set from_state = trigger.from_state.state %}
+        {% set to_state = trigger.to_state.state %}
+        {{ 
+          (from_state in locations and to_state != 'home') or
+          (from_state != 'home' and to_state in locations + ['home'])
+        }}
+    - condition: state
+      entity_id: sensor.hoon_irk
+      state: 'not_home'
+  action:
+    - variables:
+        message: >
+          {% set from_state = trigger.from_state.state %}
+          {% set to_state = trigger.to_state.state %}
+          {% if from_state != 'home' and to_state == 'home' %}
+            아빠가 집근처에 도착했습니다
+          {% elif from_state != 'home' and to_state in locations %}
+            아빠가 {{ states('person.admin') }}에 도착했습니다
+          {% endif %}
+    - service: script.universal_notify
+      data:
+        message: "{{ message }}"
+        tv_notify: true
+    # - service: tts.google_cloud_say
+    #   target:
+    #     entity_id: 
+    #       - media_player.mom_living        
+    #   data:
+    #     message: "{{ message }}"
+- id: hoon_home_tracker
+  description: 훈 위치에 따라 자동화 켜고 끄기
+  trigger:
+    - platform: state
+      entity_id: sensor.hoon_irk
+  action:
+    - service: "automation.turn_{{ 'on' if is_state('sensor.hoon_irk', 'bedroom_pre') else 'off' }}"
+      entity_id: automation.out_door_open
+
+- alias: 통합 추적 자동화
+  id: 통합_추적_자동화  # ID 추가
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.hyojin_tracker
+        - sensor.woojin_tracker
+  variables:
+    locations: ['school', 'mapo', 'study', 'hee', 'sport', 'friend', 'depat', 'helseujang', 'hyojinalba', 'byeongweon', 'yeonsedae']
+    person_map:
+      hyojin_tracker:
+        person_entity: person.hyojin_2
+        last_location_entity: input_text.hyojin_last_location
+        pre_entity: sensor.hyo_pre
+        name: 효진
+      woojin_tracker:
+        person_entity: person.ujin
+        last_location_entity: input_text.woojin_last_location
+        pre_entity: sensor.woo_pre
+        name: 우진
+  condition:
+    - condition: template
+      value_template: >
+        {% set tracker_id = trigger.to_state.entity_id.split('.')[1] %}
+        {% set person_data = person_map[tracker_id] %}
+        {% set from_state = trigger.from_state.state %}
+        {% set to_state = trigger.to_state.state %}
+        {{
+          (from_state in locations and to_state != 'home') or
+          (from_state != 'home' and to_state in locations + ['home'])
+        }}
+    - condition: template
+      value_template: >
+        {% set tracker_id = trigger.to_state.entity_id.split('.')[1] %}
+        {% set person_data = person_map[tracker_id] %}
+        {{ is_state(person_data.pre_entity, 'not_home') }}
+  action:
+    # 1. 변수 미리 정의 (효율성 및 로직 분리)
+    - variables:
+        tracker_id: "{{ trigger.to_state.entity_id.split('.')[1] }}"
+        person_data: "{{ person_map[trigger.to_state.entity_id.split('.')[1]] }}"
+        from_state: "{{ trigger.from_state.state }}"
+        to_state: "{{ trigger.to_state.state }}"
+    # 2. [추가된 부분] 도착 시(locations에 포함될 때) 해당 위치 이름을 input_text에 저장
+    - if:
+        - condition: template
+          value_template: "{{ to_state in locations }}"
+      then:
+        - service: input_text.set_value
+          target:
+            entity_id: "{{ person_data.last_location_entity }}"
+          data:
+            # 도착 메시지와 동일하게 person 엔티티의 상태(한글 지명 등)를 저장
+            value: "{{ states(person_data.person_entity) }}"
+    # 3. 메시지 생성 (저장된 위치 정보를 활용하여 출발 메시지 생성)
+    - variables:
+        message: >
+          {% if from_state != 'home' and to_state == 'home' %}
+            {{ person_data.name }}이가 집근처에 도착했습니다
+          {% elif from_state != 'home' and to_state in locations %}
+            {{ person_data.name }}이가 {{ states(person_data.person_entity) }}에 도착했습니다
+          {% elif from_state in locations and to_state != 'home' %}
+            {{ person_data.name }}이가 {{ states(person_data.last_location_entity) }}에서 출발했습니다
+          {% endif %}
+    # 4. 알림 전송
+    - service: script.universal_notify
+      data:
+        message: "{{ message }}"
+        tv_notify: true
+        android_tv_notify: true
+# - alias: 통합 추적 자동화
+#   id: 통합_추적_자동화  # ID 추가
+#   initial_state: true
+#   trigger:
+#     - platform: state
+#       entity_id:
+#         - sensor.hyojin_tracker
+#         - sensor.woojin_tracker
+#         # - device_tracker.life360_donghun_sin # Life360 트래커 추가
+#   variables:
+#     locations: ['school', 'mapo', 'study', 'hee', 'sport', 'friend', 'depat', 'helseujang', 'hyojinalba', 'byeongweon', 'yeonsedae']
+#     person_map:
+#       hyojin_tracker:
+#         person_entity: person.hyojin_2
+#         last_location_entity: input_text.hyojin_last_location
+#         pre_entity: sensor.hyo_pre
+#         name: 효진
+#       woojin_tracker:
+#         person_entity: person.ujin
+#         last_location_entity: input_text.woojin_last_location
+#         pre_entity: sensor.woo_pre
+#         name: 우진
+#       # life360_donghun_sin: # Life360 트래커 정보 추가
+#       hoon_tracker:
+#         person_entity: person.admin #  person 엔티티 ID를 정확하게 넣어주세요.
+#         last_location_entity: input_text.donghun_last_location # input_text 엔티티 ID를 정확하게 넣어주세요.
+#         pre_entity: sensor.hoon_irk
+#         name: 훈 # 이름
+#   condition:
+#     - condition: template
+#       value_template: >
+#         {% set tracker_id = trigger.to_state.entity_id.split('.')[1] %}
+#         {% set person_data = person_map[tracker_id] %}
+#         {% set from_state = trigger.from_state.state %}
+#         {% set to_state = trigger.to_state.state %}
+#         {{
+#           (from_state in locations and to_state != 'home') or
+#           (from_state != 'home' and to_state in locations + ['home'])
+#         }}
+#     - condition: template
+#       value_template: >
+#         {% set tracker_id = trigger.to_state.entity_id.split('.')[1] %}
+#         {% set person_data = person_map[tracker_id] %}
+#         {{ is_state(person_data.pre_entity, 'not_home') }}
+#   action:
+#     - variables:
+#         message: >
+#           {% set tracker_id = trigger.to_state.entity_id.split('.')[1] %}
+#           {% set person_data = person_map[tracker_id] %}
+#           {% set from_state = trigger.from_state.state %}
+#           {% set to_state = trigger.to_state.state %}
+#           {% if from_state != 'home' and to_state == 'home' %}
+#             {{ person_data.name }}이가 집근처에 도착했습니다
+#           {% elif from_state != 'home' and to_state in locations %}
+#             {{ person_data.name }}이가 {{ states(person_data.person_entity) }}에 도착했습니다
+#           {% elif from_state in locations and to_state != 'home' %}
+#             {{ person_data.name }}이가 {{ states(person_data.last_location_entity) }}에서 출발했습니다
+#           {% endif %}
+#     - service: script.universal_notify
+#       data:
+#         message: "{{ message }}"
+#         tv_notify: true
+
+- alias: mom_tracker
+  initial_state: true
+  mode: restart
+  trigger:
+    platform: state
+    entity_id: sensor.mom_tracker
+  condition:
+    condition: template
+    value_template: >-
+      {{ 
+      (trigger.from_state.state != 'mom_home' and trigger.to_state.state == 'mom_home') or
+      (trigger.from_state.state == 'mom_home' and trigger.to_state.state != 'mom_home') or
+      (trigger.from_state.state != 'hee' and trigger.to_state.state == 'hee') or
+      (trigger.from_state.state == 'hee' and trigger.to_state.state != 'hee')
+      }}
+  action:
+    - service: script.turn_on
+      data_template:
+        entity_id: >-
+          {% if trigger.from_state.state != 'mom_home' and trigger.to_state.state == 'mom_home' %}
+            script.mom_in
+          {% elif trigger.from_state.state == 'mom_home' and trigger.to_state.state != 'mom_home' %}
+            script.mom_out
+          {% elif trigger.from_state.state != 'hee' and trigger.to_state.state == 'hee' %}
+            script.mom_in
+          {% elif trigger.from_state.state == 'hee' and trigger.to_state.state != 'hee' %}
+            script.mom_hee_out
+          {% endif %}
+
+- alias: hee tracker
+  initial_state: true
+  mode: restart    
+  trigger:
+    platform: state
+    entity_id: sensor.hee_tracker
+  condition:
+    condition: template
+    value_template: >-
+      {{ 
+      (trigger.from_state.state != 'mom_home' and trigger.to_state.state == 'mom_home') or
+      (trigger.from_state.state == 'mom_home' and trigger.to_state.state != 'mom_home')
+      }}
+  action:
+    - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+    - service: script.turn_on
+      data_template:
+        entity_id: >-
+          {% if trigger.from_state.state != 'mom_home' and trigger.to_state.state == 'mom_home' %}
+            script.hee_in
+          {% elif trigger.from_state.state == 'mom_home' and trigger.to_state.state != 'mom_home' %}
+            script.hee_out
+          {% endif %}                         
+                      
+# - alias: hyojin tracker2
+#   initial_state: true
+#   trigger:
+#     - platform: state
+#       entity_id:
+#         - sensor.hyo_pre
+#         - sensor.hyo_pre2
+#   condition:
+#     - condition: template
+#       value_template: >
+#         {% set home_locations = ['study_pre', 'living_pre', 'bedroom_pre'] %}
+#         {% set is_arriving = trigger.to_state.state in home_locations %}
+#         {% if trigger.entity_id == 'sensor.hyo_pre' %}
+#           {% set was_away = trigger.from_state.state == 'not_home' and is_state('sensor.hyo_pre2', 'not_home') %}
+#         {% else %}
+#           {% set was_away = trigger.from_state.state == 'not_home' and is_state('sensor.hyo_pre', 'not_home') %}
+#         {% endif %}
+#         {{ is_arriving and was_away }}    
+#   action:
+#     - service: script.universal_notify
+#       data:
+#         message: '효진이가 도착했습니다'
+#         push_target: noti_house
+#     - delay: 00:0:05
+#     - service: homeassistant.turn_on
+#       entity_id: 
+#         - light.controller_rgb_64527a
+#         - switch.my_room
+#     - delay: 00:10:00
+#     - service: light.turn_off
+#       entity_id: light.controller_rgb_64527a
+
+- alias: hyojin tracker2
+  initial_state: true
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.hyo_pre
+      from: 'not_home'
+      to: 
+        - 'study_pre'
+        - 'living_pre'
+        - 'bedroom_pre'
+  condition:
+    - condition: template
+      value_template: >-
+        {{ now() - trigger.from_state.last_changed > timedelta(minutes=5) }}
+  action:
+    - service: script.universal_notify
+      data:
+        message: '효진이가 도착했습니다'
+        push_target: noti_house
+    - delay: 00:0:05
+    - service: homeassistant.turn_on
+      entity_id: 
+        - light.controller_rgb_64527a
+        - switch.my_room
+    - delay: 00:10:00
+    - service: light.turn_off
+      entity_id: light.controller_rgb_64527a      
+
+- alias: woojin tracker2
+  initial_state: true
+  mode: restart    
+  trigger:
+    - platform: state
+      entity_id: sensor.woo_pre
+      from: 'not_home'
+      to: 
+        - 'study_pre'
+        - 'living_pre'
+        - 'bedroom_pre'
+  action:
+    - service: script.universal_notify
+      data:
+        message: '우진이가 도착했습니다'
+        push_target: noti_house
+    - delay: 00:00:05
+    - service: homeassistant.turn_on
+      entity_id: 
+        - light.showcase
+        - switch.0x00124b0024c0591e
+    # [수정] 해가 진 상태(below_horizon)일 때만 커튼 닫기 실행
+    - if:
+        - condition: state
+          entity_id: sun.sun
+          state: below_horizon
+      then:
+        - service: cover.close_cover
+          entity_id: cover.study_curtain_gongbubang_keoteun    
+    - delay: 00:10:00
+    - service: light.turn_off
+      entity_id: light.showcase
+
+- alias: 가족 핸드폰 배터리 알림
+  initial_state: true
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.sm_s921n_battery_level
+      below: 20
+    - platform: numeric_state
+      entity_id: sensor.sinujins_iphone_battery_level
+      below: 20
+  action:
+    - variables:
+        message_base: "% 입니다. 충전해주세요."
+        phone_name: >
+          {% if trigger.entity_id == 'sensor.sm_s921n_battery_level' %}
+            효진이의 핸드폰 배터리가 {{ states('sensor.sm_s921n_battery_level') }}
+          {% elif trigger.entity_id == 'sensor.sinujins_iphone_battery_level' %}
+            우진이의 핸드폰 배터리가 {{ states('sensor.sinujins_iphone_battery_level') }}
+          {% endif %}
+    - service: script.universal_notify
+      data_template:
+        message: "{{ phone_name + message_base }}"
+
+- alias: tel_hyo
+  id: tel_hyo
+  initial_state: false
+  trigger:
+    - platform: state
+      entity_id: sensor.hyo_pre
+      from: 'not_home'
+      to: 
+        - 'study_pre'
+        - 'living_pre'
+        - 'bedroom_pre'          
+  action:
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: noti_name
+        push_title: '*효진 도착*'
+        message: '효진이가 도착했습니다.'
+        
+- alias: tel_woo
+  initial_state: false
+  trigger:
+    - platform: state
+      entity_id: sensor.woo_pre
+      from: 'not_home'
+      to: 
+        - 'study_pre'
+        - 'living_pre'
+        - 'bedroom_pre'     
+  action:
+    - service: script.universal_notify
+      data:
+        tts: false
+        push_target: noti_name
+        push_title: '*우진 도착*'
+        message: '우진이가 집에 도착했습니다.'
+
+- alias: tel_lee
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: device_tracker.galaxy_note10_5g
+    from: "not_home"
+    to: "home"
+  action:
+    - service: notify.noti_name
+      data: 
+        title: '*아부지 도착*'
+        message: '아부지가 집에 도착했습니다.'        
+
+- alias: hyo_out
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.hyo_pre
+    from: 
+      - 'study_pre'
+      - 'living_pre'
+      - 'bedroom_pre'
+    to: 'not_home'
+  action:
+    - service: homeassistant.turn_off
+      entity_id: 
+        - switch.my_room
+        - light.controller_rgb_64527a
+
+- alias: woo_out
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: sensor.woo_pre
+    from: 
+      - 'study_pre'
+      - 'living_pre'
+      - 'bedroom_pre'
+    to: 'not_home'
+  action:
+    - service: homeassistant.turn_off
+      entity_id: 
+        - light.showcase
+        - switch.desk_lamp
+    - service: cover.open_cover
+      entity_id: cover.study_curtain_gongbubang_keoteun          
