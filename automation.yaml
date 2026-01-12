@@ -296,7 +296,7 @@
               sequence:
                 - service: script.notify_lg_tv_safe
                   data:
-                    message: "{{ msg_family }}"
+                    message: "{{ msg_family if msg_family | trim != '' else '가족 모두 집에 있습니다.' }}"
                 - delay: '00:00:05'
                 - service: script.notify_lg_tv_safe
                   data:
@@ -310,13 +310,13 @@
                   data:
                     message: "{{ msg_air_external }}"
         - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ states('media_player.smarttv_4k') not in ['off', 'unavailable', 'unknown', 'standby'] }}"
-            sequence:
-              - service: script.notify_android_tv_safe
-                data:
-                  message: "{{ msg_family }}"
+            - conditions:
+                - condition: template
+                  value_template: "{{ states('media_player.smarttv_4k') not in ['off', 'unavailable', 'unknown', 'standby'] }}"
+              sequence:
+                - service: script.notify_android_tv_safe
+                  data:
+                    message: "{{ msg_family if msg_family | trim != '' else '가족 모두 집에 있습니다.' }}"
 
 - alias: tv_time
   id: tv_time

@@ -61,7 +61,7 @@ alram:
 kbo:
   name: KBO
   icon: mdi:baseball-bat
-input_boolean.cleaned_primary_bedroom:
+cleaned_primary_bedroom:
   name: cleaned_primary_bedroom
-input_boolean.cleaned_room_4:
+cleaned_room_4:
   name: cleaned_room_4
