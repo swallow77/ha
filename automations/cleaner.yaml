@@ -233,3 +233,105 @@
 #   action:
 #     - service: button.press
 #       entity_id: button.l10s_pro_ultra_heat_drying_stop
+
+- alias: Reset Room Cleaning Status
+  id: reset_room_cleaning_status
+  description: 매일 자정에 각 방의 청소 완료 상태를 초기화
+  trigger:
+    - platform: time
+      at: "00:00:00"
+  action:
+    - service: input_boolean.turn_off
+      target:
+        entity_id:
+          - input_boolean.cleaned_primary_bedroom
+          - input_boolean.cleaned_room_4
+
+- alias: Track Room Cleaning Status
+  id: track_room_cleaning_status
+  description: 청소기가 특정 방에 3분 이상 머무르면 청소한 것으로 간주하고 기록
+  trigger:
+    - platform: state
+      entity_id: sensor.l10s_pro_ultra_heat_current_room
+      to: "Primary Bedroom"
+      for: "00:03:00"
+      id: cleaned_primary
+    - platform: state
+      entity_id: sensor.l10s_pro_ultra_heat_current_room
+      to: "Room 4"
+      for: "00:03:00"
+      id: cleaned_room4
+  condition:
+    - condition: state
+      entity_id: vacuum.l10s_pro_ultra_heat
+      state: "cleaning"
+  action:
+    - choose:
+        - conditions: "{{ trigger.id == 'cleaned_primary' }}"
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.cleaned_primary_bedroom
+        - conditions: "{{ trigger.id == 'cleaned_room4' }}"
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: input_boolean.cleaned_room_4
+
+# 3. 아이 외출 시 놓친 방 보충 청소 (스마트 청소)
+- alias: Smart Missed Room Cleaning
+  id: smart_missed_room_cleaning
+  description: 아이들이 방에서 외출(not_home) 시 해당 방 미청소 상태면 보충 청소
+  mode: queued
+  trigger:
+    - platform: state
+      entity_id: sensor.hyo_pre
+      to: "not_home"
+      id: hyo_leaves
+    - platform: state
+      entity_id: sensor.woo_pre
+      to: "not_home"
+      id: woo_leaves
+  condition:
+    - condition: state
+      entity_id: vacuum.l10s_pro_ultra_heat
+      state:
+        - "docked"
+        - "idle"
+        - "returning"
+  action:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id: hyo_leaves
+            - condition: state
+              entity_id: input_boolean.cleaned_primary_bedroom
+              state: "off"
+          sequence:
+            - service: script.universal_notify
+              data:
+                message: "효진이 외출 감지. 안방 청소를 시작합니다."
+            # [수정 필요] 안방(Primary Bedroom) 청소 명령 (방 ID 확인 필요)
+            - service: dreame_vacuum.vacuum_clean_zone
+              target:
+                entity_id: vacuum.l10s_pro_ultra_heat
+              data:
+                segments: 1
+
+        - conditions:
+            - condition: trigger
+              id: woo_leaves
+            - condition: state
+              entity_id: input_boolean.cleaned_room_4
+              state: "off"
+          sequence:
+            - service: script.universal_notify
+              data:
+                message: "우진이 외출 감지. 아이방 청소를 시작합니다."
+            # [수정 필요] 방4(Room 4) 청소 명령 (방 ID 확인 필요)
+            - service: dreame_vacuum.vacuum_clean_zone
+              target:
+                entity_id: vacuum.l10s_pro_ultra_heat
+              data:
+                segments: 4
+ 
