@@ -247,91 +247,48 @@
           - input_boolean.cleaned_primary_bedroom
           - input_boolean.cleaned_room_4
 
-- alias: Track Room Cleaning Status
-  id: track_room_cleaning_status
-  description: 청소기가 특정 방에 3분 이상 머무르면 청소한 것으로 간주하고 기록
-  trigger:
-    - platform: state
-      entity_id: sensor.l10s_pro_ultra_heat_current_room
-      to: "Primary Bedroom"
-      for: "00:03:00"
-      id: cleaned_primary
-    - platform: state
-      entity_id: sensor.l10s_pro_ultra_heat_current_room
-      to: "Room 4"
-      for: "00:03:00"
-      id: cleaned_room4
-  condition:
-    - condition: state
-      entity_id: vacuum.l10s_pro_ultra_heat
-      state: "cleaning"
-  action:
-    - choose:
-        - conditions: "{{ trigger.id == 'cleaned_primary' }}"
-          sequence:
-            - service: input_boolean.turn_on
-              target:
-                entity_id: input_boolean.cleaned_primary_bedroom
-        - conditions: "{{ trigger.id == 'cleaned_room4' }}"
-          sequence:
-            - service: input_boolean.turn_on
-              target:
-                entity_id: input_boolean.cleaned_room_4
-
-# 3. 아이 외출 시 놓친 방 보충 청소 (스마트 청소)
 - alias: Smart Missed Room Cleaning
   id: smart_missed_room_cleaning
-  description: 아이들이 방에서 외출(not_home) 시 해당 방 미청소 상태면 보충 청소
-  mode: queued
+  description: 아이들이 외출 시 청소 안 된 방들을 모아서 한 번에 청소
+  mode: restart
   trigger:
     - platform: state
-      entity_id: sensor.hyo_pre
+      entity_id:
+        - sensor.hyo_pre
+        - sensor.woo_pre
       to: "not_home"
-      id: hyo_leaves
-    - platform: state
-      entity_id: sensor.woo_pre
-      to: "not_home"
-      id: woo_leaves
-  condition:
-    - condition: state
-      entity_id: vacuum.l10s_pro_ultra_heat
-      state:
-        - "docked"
-        - "idle"
-        - "returning"
+      for: "00:00:10"
   action:
-    - choose:
-        - conditions:
-            - condition: trigger
-              id: hyo_leaves
-            - condition: state
-              entity_id: input_boolean.cleaned_primary_bedroom
-              state: "off"
-          sequence:
-            - service: script.universal_notify
-              data:
-                message: "효진이 외출 감지. 안방 청소를 시작합니다."
-            # [수정 필요] 안방(Primary Bedroom) 청소 명령 (방 ID 확인 필요)
-            - service: dreame_vacuum.vacuum_clean_zone
-              target:
-                entity_id: vacuum.l10s_pro_ultra_heat
-              data:
-                segments: 1
-
-        - conditions:
-            - condition: trigger
-              id: woo_leaves
-            - condition: state
-              entity_id: input_boolean.cleaned_room_4
-              state: "off"
-          sequence:
-            - service: script.universal_notify
-              data:
-                message: "우진이 외출 감지. 아이방 청소를 시작합니다."
-            # [수정 필요] 방4(Room 4) 청소 명령 (방 ID 확인 필요)
-            - service: dreame_vacuum.vacuum_clean_zone
-              target:
-                entity_id: vacuum.l10s_pro_ultra_heat
-              data:
-                segments: 4
+    - delay:
+        seconds: 30
+    - variables:
+        rooms_to_clean: >
+          {% set data = [] %}
+          {% if is_state('sensor.hyo_pre', 'not_home') and is_state('input_boolean.cleaned_primary_bedroom', 'off') %}
+            {% set data = data + [1] %}
+          {% endif %}
+          {% if is_state('sensor.woo_pre', 'not_home') and is_state('input_boolean.cleaned_room_4', 'off') %}
+            {% set data = data + [4] %}
+          {% endif %}
+          {{ data }}
+    - condition: template
+      value_template: "{{ rooms_to_clean | length > 0 }}"
+    - wait_template: "{{ is_state('vacuum.l10s_pro_ultra_heat', 'docked') or is_state('vacuum.l10s_pro_ultra_heat', 'idle') }}"
+      timeout: "01:00:00"
+      continue_on_timeout: false
+    - service: script.universal_notify
+      data:
+        message: >
+          {% if 1 in rooms_to_clean and 4 in rooms_to_clean %}
+            모두 외출 감지. 안방과 아이방 청소를 시작합니다.
+          {% elif 1 in rooms_to_clean %}
+            효진이 외출 감지. 안방 청소를 시작합니다.
+          {% elif 4 in rooms_to_clean %}
+            우진이 외출 감지. 아이방 청소를 시작합니다.
+          {% endif %}
+    - service: dreame_vacuum.vacuum_clean_zone
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        segments: "{{ rooms_to_clean }}"
  

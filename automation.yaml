@@ -22,7 +22,7 @@
           {% if now().hour >= 7 and now().hour < 22 %}
             0.3
           {% else %}
-            0.4
+            0.3
           {% endif %}
 
 - alias: "일일 초기화"
