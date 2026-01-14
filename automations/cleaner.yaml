@@ -286,7 +286,7 @@
           {% elif 4 in rooms_to_clean %}
             우진이 외출 감지. 아이방 청소를 시작합니다.
           {% endif %}
-    - service: dreame_vacuum.vacuum_clean_zone
+    - service: dreame_vacuum.vacuum_clean_segment
       target:
         entity_id: vacuum.l10s_pro_ultra_heat
       data:

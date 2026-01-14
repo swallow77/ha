@@ -220,7 +220,7 @@
         - conditions:
             - "{{ is_occupied }}"
             - "{{ is_dark }}"
-            - "{{ is_state('light.jubang', 'off') }}"
+            # - "{{ is_state('light.jubang', 'off') }}"
             - "{{ is_home }}"
           sequence:
             - service: homeassistant.turn_on
