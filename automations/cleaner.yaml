@@ -249,7 +249,7 @@
 
 - alias: Smart Missed Room Cleaning
   id: smart_missed_room_cleaning
-  description: 아이들이 외출 시 청소 안 된 방들을 모아서 한 번에 청소
+  description: 아이들 외출 시 집에 가족이 있을 때만 미청소 방 보충 청소 및 완료 처리
   mode: restart
   trigger:
     - platform: state
@@ -258,6 +258,10 @@
         - sensor.woo_pre
       to: "not_home"
       for: "00:00:10"
+  condition:
+    - condition: state
+      entity_id: group.wifi_check
+      state: "home"
   action:
     - delay:
         seconds: 30
@@ -291,4 +295,18 @@
         entity_id: vacuum.l10s_pro_ultra_heat
       data:
         segments: "{{ rooms_to_clean }}"
+    - if:
+        - condition: template
+          value_template: "{{ 1 in rooms_to_clean }}"
+      then:
+        - service: input_boolean.turn_on
+          target:
+            entity_id: input_boolean.cleaned_primary_bedroom
+    - if:
+        - condition: template
+          value_template: "{{ 4 in rooms_to_clean }}"
+      then:
+        - service: input_boolean.turn_on
+          target:
+            entity_id: input_boolean.cleaned_room_4
  
