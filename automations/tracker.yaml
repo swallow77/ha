@@ -432,3 +432,19 @@
         - switch.desk_lamp
     - service: cover.open_cover
       entity_id: cover.study_curtain_gongbubang_keoteun          
+
+- alias: ESP to Device Tracker
+  description: ESP센서 값을 home/not_home으로 변환하여 트래커 업데이트
+  trigger:
+    - platform: state
+      entity_id:
+        - sensor.hyo_pre
+        - sensor.woo_pre
+        - sensor.hoon_irk
+  action:
+    - service: device_tracker.see
+      data:
+        dev_id: "{{ trigger.entity_id.split('.')[1] }}_tracker"
+        location_name: >
+          {{ 'not_home' if trigger.to_state.state == 'not_home' else 'home' }}
+        source_type: router      

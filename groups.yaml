@@ -9,5 +9,6 @@ wifi_check:
     # - device_tracker.donghoon_shin
     - person.hyojin_2
     - person.ujin
+    # - sensor.presence_group
     # - sensor.woojin_tracker
     # - sensor.hyojin_tracker

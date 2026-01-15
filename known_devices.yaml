@@ -31,3 +31,23 @@ fsrkb_bt_001:
   # name: hyojin_iphone
   # mac: 14:F2:87:8A:3F:DD
   # track: true
+hoon_irk_tracker:
+  name: hoon_irk_tracker
+  mac:
+  icon:
+  picture:
+  track: true
+
+woo_pre_tracker:
+  name: woo_pre_tracker
+  mac:
+  icon:
+  picture:
+  track: true
+
+hyo_pre_tracker:
+  name: hyo_pre_tracker
+  mac:
+  icon:
+  picture:
+  track: true

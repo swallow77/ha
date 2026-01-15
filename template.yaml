@@ -627,3 +627,17 @@
           off
         {% endif %}
       icon: mdi:clock-check-outline  
+
+    - name: "Presence Group"
+      unique_id: presence_group
+      icon: mdi:home-account
+      attributes:
+        friendly_name: "presence 재실"      
+      state: >
+        {% if states('sensor.hyo_pre') != 'not_home' or 
+              states('sensor.woo_pre') != 'not_home' or 
+              states('sensor.hoon_irk') != 'not_home' %}
+          home
+        {% else %}
+          not_home
+        {% endif %}      
