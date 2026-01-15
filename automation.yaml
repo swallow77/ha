@@ -414,7 +414,7 @@
     # TV가 켜져있든 꺼져있든(위에서 켰으므로) 소스 변경 수행
     - service: media_player.select_source
       data:
-        source: "PS5 게임 콘솔"
+        source: PS5 게임 콘솔
       target:
         entity_id: media_player.lg_webos_smart_tv
 
@@ -519,3 +519,78 @@
         level: info
         message: "TTS 실행 완료: {{ entity_id }} 재생이 끝났습니다."
 
+- alias: holiday_mode_manager
+  description: 휴가 모드 관리 (자동화 제어 + 청소 + 조명)
+  id: holiday_mode_manager
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: sensor.holiday_mode_status
+      id: mode_changed
+    - platform: time
+      at: "14:00:00"
+      id: cleaning
+    - platform: time
+      at:
+        - "20:00:00"
+        - "22:30:00"
+      id: lamp_ctrl
+  action:
+    - choose:
+        # 1. 휴가 모드 변경 시 (기존 자동화 일괄 제어)
+        - conditions:
+            - condition: trigger
+              id: mode_changed
+          sequence:
+            - service: >
+                homeassistant.turn_{{ 'off' if trigger.to_state.state == 'on' else 'on' }}
+              target:
+                entity_id:
+                  - automation.jeongsialrim
+                  - automation.family_schedule_outfit_recommendation
+                  - automation.cleaning_automation_modified
+                  - automation.smart_missed_room_cleaning
+                  - automation.turn_on_weather_tts
+                  - automation.pyeongil_acim_alram
+                  - automation.input_boolean_morrning_off
+                  - automation.8_briefing
+                  - automation.heater_7am_workday
+                  - automation.toilet_set_occupancy_by_counter_simple_func_like
+                  - automation.sobyeon
+                  - automation.sobyeon_off
+                  - automation.mulnaerim
+                  - light.co3_airlight
+                  - light.study_air_light
+                  - light.ili9341_display_backlight
+            - service: >
+                homeassistant.turn_{{ 'on' if trigger.to_state.state == 'on' else 'off' }}
+              target:
+                entity_id:
+                  - automation.main_door_opne
+                  - automation.out_door_open
+  
+        # 2. 스케줄 동작 (휴가 모드 'ON' 상태일 때만 실행되는 그룹)
+        - conditions:
+            - condition: state
+              entity_id: sensor.holiday_mode_status
+              state: 'on'
+          sequence:
+            - choose:
+                # 격일 청소 (오후 2시 & 짝수일)
+                - conditions:
+                    - condition: trigger
+                      id: cleaning
+                    - condition: template
+                      value_template: "{{ now().toordinal() % 2 == 0 }}"
+                  sequence:
+                    - service: script.cleaner_custom
+                # 조명 제어 (20시 켜짐, 그 외 꺼짐)
+                - conditions:
+                    - condition: trigger
+                      id: lamp_ctrl
+                  sequence:
+                    - service: >
+                        switch.turn_{{ 'on' if now().hour == 20 else 'off' }}
+                      target:
+                        entity_id: switch.desk_lamp    
+        

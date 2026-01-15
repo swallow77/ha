@@ -257,7 +257,7 @@
         - sensor.hyo_pre
         - sensor.woo_pre
       to: "not_home"
-      for: "00:00:10"
+      for: "00:03:00"
   condition:
     - condition: state
       entity_id: group.wifi_check

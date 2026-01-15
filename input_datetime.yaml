@@ -26,3 +26,11 @@ kbo_season_end_date:
   name: KBO Season End Date
   has_date: true
   has_time: false
+holiday_start:
+  name: Holiday Start Date
+  has_date: true
+  has_time: true
+holiday_end:
+  name: Holiday End Date
+  has_date: true
+  has_time: true

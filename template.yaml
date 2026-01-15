@@ -613,3 +613,17 @@
         {% elif state_attr("remote.living", "current_activity")  =="mi" %}MI
         {% else %}off
         {% endif %}
+
+    - name: "Holiday Mode Status"
+      unique_id: holiday_mode_status_time
+      state: >
+        {% set t_now = as_timestamp(now()) %}
+        {% set t_start = as_timestamp(states('input_datetime.holiday_start')) %}
+        {% set t_end = as_timestamp(states('input_datetime.holiday_end')) %}
+        
+        {% if t_start <= t_now <= t_end %}
+          on
+        {% else %}
+          off
+        {% endif %}
+      icon: mdi:clock-check-outline  
