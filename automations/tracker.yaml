@@ -37,14 +37,6 @@
     #       - media_player.mom_living        
     #   data:
     #     message: "{{ message }}"
-- id: hoon_home_tracker
-  description: 훈 위치에 따라 자동화 켜고 끄기
-  trigger:
-    - platform: state
-      entity_id: sensor.hoon_irk
-  action:
-    - service: "automation.turn_{{ 'on' if is_state('sensor.hoon_irk', 'bedroom_pre') else 'off' }}"
-      entity_id: automation.out_door_open
 
 - alias: 통합 추적 자동화
   id: 통합_추적_자동화  # ID 추가

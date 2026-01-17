@@ -442,3 +442,16 @@
           clickAction: "https://sdh7707.net/api/frigate/notifications/{{ trigger.payload_json['after']['id'] }}/clip.mp4"
           # 또는 Lovelace 뷰로 이동
           # clickAction: /lovelace-frigate/d7b9e828-98e945d8/live/out_dome    
+
+- id: hoon_home_tracker
+  description: 훈 위치에 따라 자동화 켜고 끄기
+  trigger:
+    - platform: state
+      entity_id: sensor.hoon_irk
+  condition: 
+    - condition: state
+      entity_id: sensor.holiday_mode_status
+      state: 'off'
+  action:
+    - service: "automation.turn_{{ 'on' if is_state('sensor.hoon_irk', 'bedroom_pre') else 'off' }}"
+      entity_id: automation.out_door_open

@@ -44,6 +44,8 @@
           counter.human
           {% else %}
           input_boolean.cleaned_today,
+          input_boolean.cleaned_primary_bedroom,
+          input_boolean.cleaned_room_4,
           media_player.lenovosmartdisplay106451
           {% endif %}
     - if:
@@ -200,7 +202,7 @@
   trigger:
     - platform: state
       entity_id:
-        - binary_sensor.0x187a3efffe3359fe_presence
+        - binary_sensor.0xa4c138633d96214d_presence
         - binary_sensor.0x00158d0000d4b7aa_occupancy
         - binary_sensor.0x00158d000313985a_occupancy
       to: 
@@ -210,7 +212,7 @@
     # 3개의 센서 중 하나라도 감지되면 '재실'로 판단
     is_occupied: >
       {{ is_state('binary_sensor.0x00158d0000d4b7aa_occupancy', 'on') or
-        is_state('binary_sensor.0x187a3efffe3359fe_presence', 'on') or
+        is_state('binary_sensor.0xa4c138633d96214d_presence', 'on') or
         is_state('binary_sensor.0x00158d000313985a_occupancy', 'on') }}
     is_dark: "{{ states('sensor.0x04cf8cdf3c787547_illuminance') | float(0) < 10 }}"
     is_home: "{{ is_state('group.wifi_check', 'home') }}"
@@ -277,7 +279,7 @@
           {{ now().strftime('%p %-I시') | replace("AM", "오전") | replace("PM", "오후") }}
     - variables:
         msg_family: >-
-          {%- if states('device_tracker.life360_donghun_sin') != 'home' -%} 아빠 {{ states('device_tracker.life360_donghun_sin') }} / {%- endif -%}
+          {%- if states('device_tracker.life360_donghun_sin') != 'Home' -%} 아빠 {{ states('device_tracker.life360_donghun_sin') }} / {%- endif -%}
           {%- if states('sensor.choi') != '엄마집' -%}할머니({{ states('sensor.choi') }}) {%- endif -%}
           {%- if states('sensor.hyojin') != 'Home' -%}ㅤ효진({{ states('sensor.hyojin') }}) {%- endif -%}
           {%- if states('sensor.woojin') != 'Home' -%}ㅤ우진({{ states('sensor.woojin') }}) {%- endif -%}

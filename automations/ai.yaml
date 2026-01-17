@@ -134,41 +134,27 @@
 
 - id: family_schedule_outfit_recommendation
   alias: Family Schedule Outfit Recommendation
-  description: 가족 일정(06-23시) 1시간 5분 전 날씨 기반 옷차림 추천
+  description: 가족 일정 기반 옷차림 추천
   trigger:
-    - platform: template # 이것이 유일한 트리거가 됩니다.
+    - platform: template
       value_template: >
         {% set event_str = states('sensor.calendar_family') %}
         {% set ns = namespace(trigger_now=false) %}
-        {# sensor.calendar_family의 상태가 유효한지 기본 검사 #}
         {% if event_str and event_str not in ['unknown', 'unavailable'] and event_str | length > 12 %}
           {% set month_s = event_str[0:2] %}
           {% set day_s = event_str[3:5] %}
           {% set hour_s = event_str[7:9] %}
           {% set minute_s = event_str[10:12] %}
-
-          {# 추출된 문자열이 숫자인지 확인 #}
           {% if month_s.isnumeric() and day_s.isnumeric() and hour_s.isnumeric() and minute_s.isnumeric() %}
             {% set event_hour_int = hour_s | int %}
-
-            {# 이벤트 시간 범위 확인 (코드 기준 06:00 ~ 23:59) #}
             {% if event_hour_int >= 6 and event_hour_int <= 23 %}
               {% set current_year = now().year %}
               {% set dt_current_year_str = current_year ~ '-' ~ month_s ~ '-' ~ day_s ~ ' ' ~ hour_s ~ ':' ~ minute_s ~ ':00' %}
-              
-              {# 문자열을 datetime 객체로 변환 (as_datetime 사용) #}
               {% set parsed_event_dt_naive = dt_current_year_str | as_datetime %}
-              
               {% if parsed_event_dt_naive is not none %}
-                {# 로컬 시간대로 가정하고 시간대 정보 추가 #}
                 {% set parsed_event_dt_local = parsed_event_dt_naive.replace(tzinfo=now().tzinfo) %}
-
-                {# 이벤트가 현재 시간 이후인지 확인 #}
                 {% if parsed_event_dt_local > now() %}
-                  {# --- 수정된 부분 시작 --- #}
                   {% set trigger_target_dt = parsed_event_dt_local - timedelta(hours=1, minutes=5) %}
-                  {# --- 수정된 부분 끝 --- #}
-                  {# 현재 시간이 계산된 트리거 시간 이후이고, 트리거 시간+1분 이전일 때 (1분 동안의 창) #}
                   {% if now() >= trigger_target_dt and now() < (trigger_target_dt + timedelta(minutes=1)) %}
                     {% set ns.trigger_now = true %}
                   {% endif %}
@@ -179,15 +165,12 @@
         {% endif %}
         {{ ns.trigger_now }}
   condition:
-    # 자동화 전체에 적용될 조건이 있다면 여기에 추가합니다.
-    # 예: 특정 날씨 센서가 사용 가능한지 확인
     - condition: template
       value_template: >
         {{ states('sensor.cegamondo') not in ['unknown', 'unavailable'] and
            states('sensor.hyeonjaeondo') not in ['unknown', 'unavailable'] and
            states('sensor.calendar_family') not in ['unknown', 'unavailable'] }}
   action:
-    # 1. 프롬프트 미리 생성
     - variables:
         final_prompt: >-
           {% set event_str = states('sensor.calendar_family') %}
@@ -219,8 +202,6 @@
           3. 다른 모든 특수문자 사용 및 'Celsius'와 같은 영문 단위 표시도 피해주세요. 모든 온도는 '도'로 표현해주세요.
           4. 처음에 약속시간과 내용을 이야기하고 추천옷차림을 부드럽고 친절한 말투로 답변 부탁드립니다. 
           5. 장소에 필요할만한 준비물 같은게 필요할것 같은것도 있으면 답변 부탁드립니다.
-  
-    # 2. API 호출 및 재생 대기
     - alias: Retry Generation
       repeat:
         count: 3
@@ -230,13 +211,10 @@
             data:
               prompt: "{{ final_prompt }}"
             response_variable: ai_outfit_recommendation
-          
-          # 성공 여부 확인
           - if:
               - condition: template
                 value_template: "{{ ai_outfit_recommendation is defined and ai_outfit_recommendation.text is defined }}"
             then:
-              # 성공했으면 메시지 가공
               - variables:
                   processed_message: >
                     {{ ai_outfit_recommendation.text 
@@ -244,7 +222,6 @@
                        | replace('\n', ' ') 
                        | replace('  ', ' ')
                        | trim }}
-              # TTS 실행 요청
               - service: script.universal_notify
                 data:
                   message: "{{ processed_message }}"
@@ -253,26 +230,21 @@
                   tts_options:
                     speed: 0.9
                     pitch: -1.5
-              
-              # ▼▼▼ [핵심 수정] 소리가 나올 때까지 넉넉하게 기다림 ▼▼▼
-              # 1. '재생 중' 상태가 될 때까지 최대 20초 대기 (서버 지연 고려)
               - wait_template: "{{ is_state('media_player.jeonce2', 'playing') }}"
-                timeout: "00:00:20"
+                timeout: "00:00:30"
                 continue_on_timeout: true
-              
-              # 2. 재생이 시작되었으면, 끝날 때까지 대기 (최대 3분)
-              # 이렇게 해야 자동화가 '실행 중' 상태를 유지해서 화장실 센서가 끄지 않음
-              - wait_template: "{{ not is_state('media_player.jeonce2', 'playing') }}"
-                timeout: "00:03:00"
-              
-              # 3. 재생 종료 후 자동화 완료
-              - stop: "Success: TTS Finished"
-          
-          # 실패했다면 대기 후 재시도
+              - wait_for_trigger:
+                  - platform: state
+                    entity_id: media_player.jeonce2
+                    from: "playing"
+                    for: "00:00:20"
+                timeout: "00:05:00"
+                continue_on_timeout: true
+              - delay:
+                  seconds: 5
+              - stop: "Success"
           - delay:
               minutes: 1
-  
-    # 3. 3번 다 실패했을 경우 실행되는 실패 알림
     - service: script.universal_notify
       data:
         message: "죄송합니다. 구글 서버 응답이 없어 옷차림 추천을 할 수 없습니다."
@@ -281,4 +253,3 @@
         tts_options:
           speed: 0.9
           pitch: -1.5
-
