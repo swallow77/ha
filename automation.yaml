@@ -279,7 +279,7 @@
           {{ now().strftime('%p %-I시') | replace("AM", "오전") | replace("PM", "오후") }}
     - variables:
         msg_family: >-
-          {%- if states('device_tracker.life360_donghun_sin') != 'Home' -%} 아빠 {{ states('device_tracker.life360_donghun_sin') }} / {%- endif -%}
+          {%- if states('device_tracker.life360_donghun_sin') != 'Home' and states('device_tracker.life360_donghun_sin') != 'home'  -%} 아빠 {{ states('device_tracker.life360_donghun_sin') }} / {%- endif -%}
           {%- if states('sensor.choi') != '엄마집' -%}할머니({{ states('sensor.choi') }}) {%- endif -%}
           {%- if states('sensor.hyojin') != 'Home' -%}ㅤ효진({{ states('sensor.hyojin') }}) {%- endif -%}
           {%- if states('sensor.woojin') != 'Home' -%}ㅤ우진({{ states('sensor.woojin') }}) {%- endif -%}

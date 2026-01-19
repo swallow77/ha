@@ -642,7 +642,7 @@ food_clean:
       target:
         entity_id: select.l10s_pro_ultra_heat_cleangenius
       data:
-        option: 'off'
+        option: 'off'  
     - service: select.select_option
       target:
         entity_id: select.l10s_pro_ultra_heat_cleangenius
@@ -666,12 +666,63 @@ food_clean:
     - service: dreame_vacuum.vacuum_clean_zone
       data:
         zone:
-          - - -1050.4838709677424
-            - -1781.9892473118284
-            - 1823.9247311827949
-            - 918.6559139784949
+          - -1147.5574712643677 
+            -2342.8879310344837 
+             1999.9281609195405 
+             658.6206896551712
       target:
         entity_id: vacuum.l10s_pro_ultra_heat
+
+living_clean:
+  alias: Living Clean
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'deep_cleaning'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+    - service: dreame_vacuum.vacuum_clean_segment
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        segments: 2 
+              
+study_clean:
+  alias: Study Clean
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'deep_cleaning'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+    - service: dreame_vacuum.vacuum_clean_segment
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        segments: 4           
+
+bedroom_clean:
+  alias: Bedroom Clean
+  sequence:
+    - service: select.select_option
+      target:
+        entity_id: select.l10s_pro_ultra_heat_cleangenius
+      data:
+        option: 'deep_cleaning'
+    - service: vacuum.start
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+    - service: dreame_vacuum.vacuum_clean_segment
+      target:
+        entity_id: vacuum.l10s_pro_ultra_heat
+      data:
+        segments: 2
 
 8briefing:
   alias: 8 Briefing
@@ -921,7 +972,6 @@ trace_total:
         tv_notify: true
         android_tv_notify: true
 
-
 chekin_fail:
   alias: 출근 실패
   sequence:
@@ -929,4 +979,25 @@ chekin_fail:
       data:
         message: "출근제출이 실패했습니다 확인해주세요"
         tv_notify: true
-        android_tv_notify: true        
+        android_tv_notify: true    
+
+laundry_remote:
+  alias: laundry_remote
+  sequence:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.setaggi_power
+    - delay: '00:00:05'    
+    - action: switch.turn_on
+      target:
+        entity_id: switch.0xa4c138e4ce471d02
+    - wait_for_trigger:
+        - platform: state
+          entity_id: binary_sensor.setaggi_remote_start_2
+          to: "on"
+    - action: switch.turn_off
+      target:
+        entity_id: switch.0xa4c138e4ce471d02
+    - action: notify.mobile_app_sm_s936n
+      data:
+        message: "세탁기가 원격"

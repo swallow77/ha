@@ -241,12 +241,12 @@
     - platform: state
       entity_id: sensor.l10s_pro_ultra_heat_current_room
       to: "Primary Bedroom"
-      for: "00:03:00"
+      for: "00:02:00"
       id: cleaned_primary
     - platform: state
       entity_id: sensor.l10s_pro_ultra_heat_current_room
       to: "Room 4"
-      for: "00:03:00"
+      for: "00:02:00"
       id: cleaned_room4
   condition:
     - condition: state
@@ -283,6 +283,12 @@
     - condition: state
       entity_id: vacuum.l10s_pro_ultra_heat
       state: "docked"
+    - condition: state
+      entity_id: input_boolean.cleaned_today
+      state: "on"
+    - condition: time
+      after: "08:00:00"
+      before: "21:00:00"      
   action:
     - delay:
         seconds: 30
