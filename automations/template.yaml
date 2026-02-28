@@ -148,17 +148,25 @@
 
 
 
-- id: combined_room_humidity_control
-  alias: combined_room_humidity
-  description: 효진/우진 방의 재실 여부 및 습도에 따라 각 방 가습기 제어
-  initial_state: true
+- id: smart_humidifier_pro
+  alias: smart_humidifier_pro
+  description: 습도 구간별(40, 45, 48, 50%)로 팬 속도를 4단계 자동 변환하여 정밀 제어
+  mode: restart
   trigger:
     - platform: state
       entity_id:
         - sensor.hyojin
         - sensor.woojin
+    - platform: state
+      entity_id:
         - sensor.0x00158d0002fb4710_humidity
         - sensor.0x00158d0002b573e9_humidity
+    - platform: numeric_state
+      entity_id:
+        - sensor.0x00158d0002fb4710_humidity
+        - sensor.0x00158d0002b573e9_humidity
+      above: 50
+      for: "00:05:00"
   condition:
     - condition: template
       value_template: "{{ states('humidifier.deerma_jsq2g_5c0e_humidifier') not in ['unknown', 'unavailable'] }}"
@@ -169,34 +177,74 @@
         - conditions:
             - condition: state
               entity_id: sensor.hyojin
-              state: 'home'
+              state: 'Home'
             - condition: numeric_state
               entity_id: sensor.0x00158d0002b573e9_humidity
-              below: 42
-          sequence:
-            - service: humidifier.turn_on
-              target:
-                entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
-      default:
-        - service: humidifier.turn_off
-          target:
-            entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
-    - choose:
-        - conditions:
-            - condition: state
-              entity_id: sensor.woojin
-              state: 'home'
-            - condition: numeric_state
-              entity_id: sensor.0x00158d0002fb4710_humidity
-              below: 42
+              below: 50
           sequence:
             - service: humidifier.turn_on
               target:
                 entity_id: humidifier.deerma_jsq2g_cdef_humidifier_2
-      default:
-        - service: humidifier.turn_off
-          target:
-            entity_id: humidifier.deerma_jsq2g_cdef_humidifier_2
+            - service: select.select_option
+              target:
+                entity_id: select.deerma_jsq2g_cdef_fan_level_2
+              data:
+                option: >
+                  {% set h = states('sensor.0x00158d0002b573e9_humidity')|float(0) %}
+                  {% if h < 40 %} 4
+                  {% elif h < 45 %} 3
+                  {% elif h < 48 %} 2
+                  {% else %} 1
+                  {% endif %}
+        - conditions:
+            - condition: or
+              conditions:
+                - condition: state
+                  entity_id: sensor.hyojin
+                  state: 'not_home'
+                - condition: numeric_state
+                  entity_id: sensor.0x00158d0002b573e9_humidity
+                  above: 50
+          sequence:
+            - service: humidifier.turn_off
+              target:
+                entity_id: humidifier.deerma_jsq2g_cdef_humidifier_2
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: sensor.woojin
+              state: 'Home'
+            - condition: numeric_state
+              entity_id: sensor.0x00158d0002fb4710_humidity
+              below: 50
+          sequence:
+            - service: humidifier.turn_on
+              target:
+                entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
+            - service: select.select_option
+              target:
+                entity_id: select.deerma_jsq2g_5c0e_fan_level
+              data:
+                option: >
+                  {% set h = states('sensor.0x00158d0002fb4710_humidity')|float(0) %}
+                  {% if h < 40 %} 4
+                  {% elif h < 45 %} 3
+                  {% elif h < 48 %} 2
+                  {% else %} 1
+                  {% endif %}
+        - conditions:
+            - condition: or
+              conditions:
+                - condition: state
+                  entity_id: sensor.woojin
+                  state: 'not_home'
+                - condition: numeric_state
+                  entity_id: sensor.0x00158d0002fb4710_humidity
+                  above: 50
+          sequence:
+            - service: humidifier.turn_off
+              target:
+                entity_id: humidifier.deerma_jsq2g_5c0e_humidifier
 
 - id: 'heater_7am_workday'
   alias: Heater 7am Workday

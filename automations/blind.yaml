@@ -150,27 +150,27 @@
       at: "07:10:00"
       id: trigger_workday_time
     - platform: time
-      at: "10:55:00"
+      at: "09:00:00"
       id: trigger_holiday_time
   condition: []
   action:
     - choose:
         # 오전 10:55 트리거 & (휴일 또는 방학)
-        # - conditions:
-        #     - condition: trigger
-        #       id: trigger_holiday_time
-        #     - condition: or
-        #       conditions:
-        #         - condition: state
-        #           entity_id: binary_sensor.korean_workday
-        #           state: 'off'
-        #         - condition: state
-        #           entity_id: sensor.vacation_mode
-        #           state: 'on'
-        #   sequence:
-        #     - service: cover.open_cover
-        #       target:
-        #         entity_id: cover.study_curtain_gongbubang_keoteun
+        - conditions:
+            - condition: trigger
+              id: trigger_holiday_time
+            - condition: or
+              conditions:
+                - condition: state
+                  entity_id: binary_sensor.korean_workday
+                  state: 'off'
+                - condition: state
+                  entity_id: sensor.vacation_mode
+                  state: 'on'
+          sequence:
+            - service: cover.open_cover
+              target:
+                entity_id: cover.study_curtain_gongbubang_keoteun
         # 오전 7:10 트리거 & 평일 & 방학 아님
         - conditions:
             - condition: trigger

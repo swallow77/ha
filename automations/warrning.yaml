@@ -144,8 +144,8 @@
         push_target: noti_name
         push_title: '★거실문 알림★'
         message: "거실문 알림"
-        tv_notify: true
-        android_tv_notify: true
+        # tv_notify: true
+        # android_tv_notify: true
 
 - alias: out_door_open
   id: out_door_open
@@ -161,8 +161,8 @@
         push_target: noti_name
         push_title: '*현관문 알림*'
         message: "현관문 알림"
-        tv_notify: true
-        android_tv_notify: true
+        # tv_notify: true
+        # android_tv_notify: true
 
 - alias: now_rain
   id: now_rain
@@ -201,8 +201,8 @@
     - service: script.universal_notify
       data:
         message: "현재 비가 내립니다 창문을 확인해주세요"
-        tv_notify: true
-        android_tv_notify: true
+        # tv_notify: true
+        # android_tv_notify: true
 # - alias: gas_alram
 #   initial_state: on
 #   trigger:
@@ -255,8 +255,8 @@
         message: "현관문이 열렸습니다"
         push_target: noti_all
         push_title: '*문열림*'     
-        tv_notify: true
-        android_tv_notify: true
+        # tv_notify: true
+        # android_tv_notify: true
 
 - alias: 문열림2
   initial_state: true
@@ -314,6 +314,7 @@
         message: '침입자가 발생했습니다'
             
 - alias: 누수
+  id: 누수
   initial_state: true
   trigger:
     platform: state
@@ -329,8 +330,8 @@
       data: 
         title: '*누수 발생*'
         message: '누수가 발생했습니다'
-        tv_notify: true
-        android_tv_notify: true        
+        # tv_notify: true
+        # # android_tv_notify: true        
     - service: media_player.volume_set
       entity_id:
         - media_player.jeonce
@@ -345,6 +346,7 @@
       entity_id: media_player.jeonce
       data:
         message: "누수발생 누수발생 누수발생 누수발생 누수가 발생됬습니다."
+    - delay: 00:01:00    
     - service: media_player.volume_set
       entity_id:
         - media_player.jeonce
@@ -354,7 +356,7 @@
         - media_player.maegseu
         - media_player.nesthub4076
       data:
-        volume_level: 0.5        
+        volume_level: 0.4
     - delay: 00:01:00
     - service: script.turn_on
       entity_id: script.play_sel_sound_loop
@@ -444,14 +446,13 @@
           # clickAction: /lovelace-frigate/d7b9e828-98e945d8/live/out_dome    
 
 - id: hoon_home_tracker
-  description: 훈 위치에 따라 자동화 켜고 끄기
+  description: 훈 위치 및 admin 부재 시 자동화 제어
   trigger:
     - platform: state
       entity_id: sensor.hoon_irk
-  condition: 
-    - condition: state
-      entity_id: sensor.holiday_mode_status
-      state: 'off'
+    - platform: state
+      entity_id: person.admin
   action:
-    - service: "automation.turn_{{ 'on' if is_state('sensor.hoon_irk', 'bedroom_pre') else 'off' }}"
-      entity_id: automation.out_door_open
+    - service: "{{ 'automation.turn_on' if is_state('sensor.hoon_irk', 'bedroom_pre') or not is_state('person.admin', 'home') else 'automation.turn_off' }}"
+      target:
+        entity_id: automation.out_door_open

@@ -153,6 +153,9 @@
       above: 50
       for:
         seconds: 10
+  condition:
+    - condition: template
+      value_template: "{{ state_attr('fan.zhimi_m1_3538_air_purifier', 'preset_mode') != 'Favorite' }}"        
   action:
     - service: script.universal_notify
       data:
@@ -194,98 +197,130 @@
             preset_mode: "Auto"
             
 - alias: air_condition_final_revised_ver4
-  initial_state: true
+  id: air_purifier_level_ctrl
+  description: 미세먼지 수치별 팬 속도 자동 조절
+  mode: restart
   trigger:
     - platform: state
       entity_id: sensor.pm25
   action:
     - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
     - variables:
-        pm25: "{{ states('sensor.pm25') | int(0) }}"
+        current: "{{ trigger.to_state.state | int(0) }}"
+        previous: "{{ trigger.from_state.state | int(0) if trigger.from_state is not none else 0 }}"
         level_data: >
-          {% if pm25 >= 70 %} 10
-          {% elif pm25 >= 60 %} 9
-          {% elif pm25 >= 50 %} 8
-          {% elif pm25 >= 40 %} 7
-          {% elif pm25 >= 30 %} 6
-          {% elif pm25 >= 20 %} 5
+          {% if current >= 70 %} 10
+          {% elif current >= 50 %} 9
+          {% elif current >= 40 %} 8
+          {% elif current >= 30 %} 7
+          {% elif current >= 20 %} 6
           {% else %} 3
           {% endif %}
     - choose:
         - conditions:
             - condition: template
-              value_template: "{{ pm25 >= 70 }}"
+              value_template: "{{ current < previous }}"
           sequence:
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 70 and (trigger.from_state.state | float(0)) >= 70 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 70 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 60 and trigger.from_state.state | int(0) >= 60 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 60 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 50 and trigger.from_state.state | int(0) >= 50 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 50 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 40 and trigger.from_state.state | int(0) >= 40 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 40 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 30 and trigger.from_state.state | int(0) >= 30 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 30 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ pm25 < 20 and trigger.from_state.state | int(0) >= 20 }}"
-          sequence:
-            - wait_template: "{{ states('sensor.pm25') | int(0) < 20 }}"
-              timeout: "00:03:00"
-              continue_on_timeout: false
-            - service: number.set_value
-              entity_id: number.zhimi_m1_3538_favorite_fan_level
-              data:
-                value: "{{ level_data }}"
+            - delay: "00:03:00"
+    - service: number.set_value
+      target:
+        entity_id: number.zhimi_m1_3538_favorite_fan_level
+      data:
+        value: "{{ level_data }}"
+                    
+# - alias: air_condition_final_revised_ver4
+#   initial_state: true
+#   trigger:
+#     - platform: state
+#       entity_id: sensor.pm25
+#   action:
+#     - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
+#     - variables:
+#         pm25: "{{ states('sensor.pm25') | int(0) }}"
+#         level_data: >
+#           {% if pm25 >= 70 %} 10
+#           {% elif pm25 >= 60 %} 9
+#           {% elif pm25 >= 50 %} 9
+#           {% elif pm25 >= 40 %} 8
+#           {% elif pm25 >= 30 %} 7
+#           {% elif pm25 >= 20 %} 6
+#           {% else %} 3
+#           {% endif %}
+#     - choose:
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 >= 70 }}"
+#           sequence:
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 70 and (trigger.from_state.state | float(0)) >= 70 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 70 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 60 and trigger.from_state.state | int(0) >= 60 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 60 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 50 and trigger.from_state.state | int(0) >= 50 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 50 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 40 and trigger.from_state.state | int(0) >= 40 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 40 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 30 and trigger.from_state.state | int(0) >= 30 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 30 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
+#         - conditions:
+#             - condition: template
+#               value_template: "{{ pm25 < 20 and trigger.from_state.state | int(0) >= 20 }}"
+#           sequence:
+#             - wait_template: "{{ states('sensor.pm25') | int(0) < 20 }}"
+#               timeout: "00:03:00"
+#               continue_on_timeout: false
+#             - service: number.set_value
+#               entity_id: number.zhimi_m1_3538_favorite_fan_level
+#               data:
+#                 value: "{{ level_data }}"
 
 - id: dehumidifier_unified_control_revised
   alias: Dehumidifier Unified Control Revised

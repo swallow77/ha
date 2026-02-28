@@ -326,13 +326,13 @@
     - name: "day2"
       unique_id: "day2"
       state: >-
-        {% if is_state("sensor.day1", "Monday") %}월요일
-        {% elif is_state("sensor.day1", "Tuesday") %}화요일
-        {% elif is_state("sensor.day1", "Wednesday") %}수요일
-        {% elif is_state("sensor.day1", "Thursday") %}목요일
-        {% elif is_state("sensor.day1", "Friday") %}금요일
-        {% elif is_state("sensor.day1", "Saturday") %}토요일
-        {% elif is_state("sensor.day1", "Sunday") %}일요일
+        {% if is_state("sensor.data", "Monday") %}월요일
+        {% elif is_state("sensor.data", "Tuesday") %}화요일
+        {% elif is_state("sensor.data", "Wednesday") %}수요일
+        {% elif is_state("sensor.data", "Thursday") %}목요일
+        {% elif is_state("sensor.data", "Friday") %}금요일
+        {% elif is_state("sensor.data", "Saturday") %}토요일
+        {% elif is_state("sensor.data", "Sunday") %}일요일
         {% else %}일요일{% endif %}
 
     - name: "r_sleep_time"

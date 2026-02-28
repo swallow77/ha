@@ -20,7 +20,7 @@
       data:
         volume_level: >
           {% if now().hour >= 7 and now().hour < 22 %}
-            0.3
+            0.35
           {% else %}
             0.3
           {% endif %}
