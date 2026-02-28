@@ -74,8 +74,8 @@
       data:
         entity_id: media_player.maegseu
         media_content_type: image/jpeg
-        # media_content_id: /config/www/snap/door.jpg 
-        media_content_id: https://sdh7707.net/local/snap/door.jpg 
+        # media_content_id: /config/www/img/door.jpg 
+        media_content_id: https://sdh7707.net/local/img/door.jpg 
     - delay: 00:01:00  
     - action: media_player.turn_off
       target:
@@ -98,7 +98,11 @@
     - service: camera.snapshot
       data:
         entity_id: camera.out_dome
-        filename: /config/www/snap/door.jpg
+        filename: /config/www/img/door.jpg
+    - service: camera.snapshot
+      data:
+        entity_id: camera.out_dome
+        filename: /media/door1.jpg
     - delay: 00:00:02
     - if:
         - condition: state
@@ -109,15 +113,15 @@
         - service: notify.hyo_tv
           data:
             data:
-              image: /config/www/snap/door.jpg
+              image: /config/www/img/door.jpg
             message: 대문알림
     - wait_template: "{{ is_state('media_player.jeonce', 'idle') or is_state('media_player.jeonce', 'off') }}"
     - service: media_player.play_media
       data:
         entity_id: media_player.maegseu
         media_content_type: image/jpeg
-        # media_content_id: /config/www/snap/door.jpg 
-        media_content_id: https://sdh7707.net/local/snap/door.jpg
+        # media_content_id: /config/www/img/door.jpg 
+        media_content_id: https://sdh7707.net/local/img/door.jpg
     - delay: 00:01:00  
     - action: media_player.turn_off
       target:

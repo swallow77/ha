@@ -10,6 +10,9 @@ homeassistant:
   currency: KRW
   time_zone: Asia/Seoul
   customize: !include customize.yaml
+  allowlist_external_dirs:
+    - /media
+  
   # auth_providers:
    # - type: legacy_api_password
      # api_password: !secret http_password
@@ -176,8 +179,6 @@ frontend:
     - /local/card-mod.js
 
 media_source:
-
-
 # clova:
 # device_tracker:
   # - platform: bluetooth_le_tracker

@@ -104,15 +104,15 @@
   initial_state: true
   trigger:
     - platform: time
-      at: "08:30:00"
+      at: "08:50:00"
       id: wake_up_time
   condition:
     - condition: state
       entity_id: binary_sensor.workday_sensor
       state: 'on'
-    # - condition: state
-    #   entity_id: input_boolean.morrning
-    #   state: 'off'
+    - condition: state
+      entity_id: input_boolean.morrning
+      state: 'on'
   action:
     - service: media_player.volume_set
       target:

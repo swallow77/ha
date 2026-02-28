@@ -6,9 +6,9 @@
   action:
     - service: script.trace_total
 
-- alias: 택배 도착 체크
-  id: 택배_도착_체크
-  description: 택배오면 ai가 체크함
+- alias: Check Package
+  id: check_package
+  description: 택배 도착 확인
   trigger:
     - platform: state
       entity_id: binary_sensor.zone_1_person_occupancy
@@ -18,17 +18,20 @@
       entity_id: input_number.trace
       above: 0
   action:
-    - service: ai_task.generate_data
+    - action: ai_task.generate_data
       data:
-        filenames: /config/www/snap/door.jpg
-        prompt: >-
-          사진은 위에서 바라보는 사진이야 왼쪽이 우리집인데데 택배를 배달하는것 같거나, 조그만한 수레등을 가지고 택배 배달 같거나, 무언가를 들고 문으로 향하면 간단하게 '택배가 온 거 같습니다' 해주고 아니면 '방문' 이라고 표시해줘
+        task_name: Package Analysis     
+        instructions: >-
+          사진은 위에서 바라보는 사진이야 왼쪽이 우리집 대문인데, 택배를 배달하는것 같거나, 조그만한 수레등을 가지고 택배 배달 같거나, 무언가를 들고 문으로 향하면 간단하게 '택배가 온 거 같습니다' 해주고 아니면 '방문' 이라고 표시해줘
+        attachments:
+            - media_content_id: "media-source://media_source/local/door1.jpg"
+              media_content_type: image/jpeg            
       response_variable: generated_content
-    - service: input_text.set_value
-      data_template:
-        value: "{{ generated_content.text }}"
+    - action: input_text.set_value
       target:
         entity_id: input_text.trace_text
+      data:
+        value: "{{ generated_content.text }}"
         
 
 - alias: 택배 확인
